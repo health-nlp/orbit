@@ -1,0 +1,6 @@
+FROM ghcr.io/hscells/openpm-data:main
+
+WORKDIR /app
+RUN uv sync
+
+ENTRYPOINT ["uv" "run" "-m" "fastapi" "dev" "main.py"]
