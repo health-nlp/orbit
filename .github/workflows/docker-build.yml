@@ -58,7 +58,7 @@ jobs:
 
   api:
 
-    depends-on: data
+    needs: data
 
     runs-on: ubuntu-latest
     
