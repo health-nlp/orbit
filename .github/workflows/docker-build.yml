@@ -42,7 +42,7 @@ jobs:
       id: push
       uses: docker/build-push-action@f2a1d5e99d037542a71f64918e516c093c6f3fc4
       with:
-        context: docker
+        context: .
         push: true
         file: Dockerfile.data
         tags: ${{ steps.meta.outputs.tags }}
@@ -88,7 +88,7 @@ jobs:
       id: push
       uses: docker/build-push-action@f2a1d5e99d037542a71f64918e516c093c6f3fc4
       with:
-        context: docker
+        context: .
         push: true
         file: Dockerfile.api
         tags: ${{ steps.meta.outputs.tags }}
