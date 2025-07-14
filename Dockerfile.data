@@ -4,6 +4,8 @@ WORKDIR /app
 COPY main.py pyproject.toml uv.lock /app/
 RUN pip install uv
 RUN uv sync
+RUN uv run -m pip install /pybool_ir/pylucene/dist/*.whl
+RUN uv run -m pip install -e /pybool_ir
 RUN uv run -m pybool_ir.cli pubmed download -b baseline
 RUN uv run -m pybool_ir.cli pubmed process -b baseline -o pubmed-processed.jsonl
 RUN rm -rf baseline
