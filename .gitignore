@@ -15,3 +15,8 @@ baseline
 lib
 *.jsonl
 *.json
+
+app/baseline
+app/index
+app/*.jsonl
+app/*.json

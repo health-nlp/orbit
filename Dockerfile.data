@@ -6,8 +6,6 @@ RUN pip install uv
 RUN uv sync
 RUN uv run -m pip install /pybool_ir/pylucene/dist/*.whl
 RUN uv run -m pip install -e /pybool_ir
-RUN uv run -m pybool_ir.cli pubmed download -b baseline
-RUN uv run -m pybool_ir.cli pubmed process -b baseline -o pubmed-processed.jsonl
-RUN rm -rf baseline
-RUN uv run -m pybool_ir.cli pubmed index -b pubmed-processed.jsonl -s 1 -i index
-RUN rm pubmed-processed.jsonl
+COPY index-pubmed.sh /app/index-pubmed.sh
+
+ENTRYPOINT ["sh", "index-pubmed.sh"]
