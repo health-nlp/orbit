@@ -6,6 +6,5 @@ RUN pip install uv
 RUN uv sync
 RUN uv run -m pip install /pybool_ir/pylucene/dist/*.whl
 RUN uv run -m pip install -e /pybool_ir
-COPY index-pubmed.sh /app/index-pubmed.sh
 
 ENTRYPOINT ["sh", "index-pubmed.sh"]
