@@ -32,7 +32,7 @@ def esearch(term: str):
                 "ERROR": str(e),
             }
         }
-    with AdHocExperiment(PubmedIndexer(index_path="index"), raw_query=term) as experiment:
+    with AdHocExperiment(PubmedIndexer(index_path="/app/index"), raw_query=term) as experiment:
         results = experiment.run
         lock.release()
         return {
