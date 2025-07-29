@@ -6,5 +6,5 @@ data:
 	docker run --platform=linux/amd64 --mount type=bind,source=${PWD}/app,target=/app/ openpm-data:latest
 
 api: 
-	docker build --no-cache --platform=linux/amd64 -f Dockerfile.api -t openpm-api:latest .
-	docker run --platform=linux/amd64 --mount type=bind,source=${PWD}/app,target=/app/ openpm-api:latest -p 8000:8000
+	docker build --platform=linux/amd64 -f Dockerfile.api -t openpm-api:latest .
+	docker run -p 8000:8000 --platform=linux/amd64 --mount type=bind,source=${PWD}/app,target=/app/ openpm-api:latest 
