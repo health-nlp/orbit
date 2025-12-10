@@ -1,11 +1,16 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException, Query
 
 from pybool_ir.experiments.retrieval import AdHocExperiment
 from pybool_ir.index.pubmed import PubmedIndexer
 from pybool_ir.query.pubmed.parser import PubmedQueryParser
+from pybool_ir.index.pubmed_document import PubmedArticle
+from typing import List, Dict, Any
 
 import threading
 import lucene
+
+# GLOBAL variables and paths
+LOCAL_INDEX_PATH = "/app/index"
 
 app = FastAPI()
 vm = lucene.getVMEnv()
@@ -13,7 +18,7 @@ lock = threading.Lock()
 parser = PubmedQueryParser()
 
 @app.get("/esearch")
-def esearch(term: str):
+async def esearch(term: str = Query(..., "Search term using boolean queries")):
     lock.acquire()
     vm.attachCurrentThread()
     try:
@@ -32,7 +37,7 @@ def esearch(term: str):
                 "ERROR": str(e),
             }
         }
-    with AdHocExperiment(PubmedIndexer(index_path="/app/index"), raw_query=term) as experiment:
+    with AdHocExperiment(PubmedIndexer(index_path=LOCAL_INDEX_PATH), raw_query=term) as experiment:
         results = experiment.run
         lock.release()
         return {
@@ -51,3 +56,39 @@ def esearch(term: str):
             },
             "querytranslation": formatted_query
         }
+
+# Implementing EFetch endpoint   
+@app.get("/efetch")
+async def efetch(id: str = Query(..., description="Comma seperated list of UIDs (e.g. '12345678', '90123456')")): 
+    uid_list = [p.strip() for p in id.split(',') if p.strip()]
+
+    lock.acquire()
+    try: 
+        vm.attachCurrentThread()
+        
+        lucene_query = " OR ".join([f"id:'{uid}'" for uid in uid_list])
+        print(f"lucene_query: {lucene_query}")
+
+        indexer = PubmedIndexer(index_path=LOCAL_INDEX_PATH, store_fields=True)
+        indexer.open()
+
+        articles: List[PubmedArticle] = indexer.search(query=lucene_query, n_hits=len(uid_list))
+        article_dicts: List[Dict[str, Any]] = [article.to_dict() for article in articles]
+
+        indexer.close()
+
+        return {
+            "header": {
+                "type": "efetch",
+                "version": "0.3-openpm",
+            },
+            "articleList": article_dicts,
+            "error": None            
+        }
+    except Exception as e: 
+        raise HTTPException(
+            status_code = 500,
+            detail = f"An error occured while processing Efetch or accessing index: {e}"
+        )
+    finally:
+        lock.release()
