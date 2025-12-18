@@ -30,7 +30,7 @@ services:
     depends_on:
       - data_builder
     ports:
-      - "8000:8000"  # ACHTUNG: FastAPI läuft standardmäßig auf 8000. Ihr Mapping war 8000:3000. Wenn Sie den Port in FastAPI nicht geändert haben, war 3000 falsch.
+      - "8000:3000"  # ACHTUNG: FastAPI läuft standardmäßig auf 8000. Ihr Mapping war 8000:3000. Wenn Sie den Port in FastAPI nicht geändert haben, war 3000 falsch.
     environment:
       # Wichtig für PyLucene, falls es im Dockerfile gesetzt wurde,
       # wird es manchmal zur Laufzeit überschrieben, wenn man nicht aufpasst.
