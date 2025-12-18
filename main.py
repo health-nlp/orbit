@@ -8,9 +8,12 @@ from typing import List, Dict, Any
 
 import threading
 import lucene
+import os
 
-# GLOBAL variables and paths
-LOCAL_INDEX_PATH = "/app/index"
+# LOCAL_INDEX_PATH now can be controlled via environment variable.
+# Default for normal runs (in docker) is /app/index.
+# For CI/Test we will set LOCAL_INDEX_PATH via the workflow/environment to the test index folder.
+LOCAL_INDEX_PATH = os.getenv("LOCAL_INDEX_PATH", "/app/index")
 
 app = FastAPI()
 vm = lucene.getVMEnv()
@@ -19,13 +22,18 @@ parser = PubmedQueryParser()
 
 @app.get("/esearch")
 async def esearch(term: str = Query(..., "Search term using boolean queries")):
+    """
+    ESearch-like endpoint.
+    Example: GET /esearch?term=cancer+AND+therapy
+    """
     lock.acquire()
     vm.attachCurrentThread()
     try:
+        # Parse and prepare query (will raise on malformed query)
         ast = parser.parse_ast(term)
         parser.parse_lucene(term)
         formatted_query = parser.format(ast)
-        print(formatted_query)
+        print("Formatted query:", formatted_query)
     except Exception as e:
         lock.release()
         return {
@@ -37,6 +45,8 @@ async def esearch(term: str = Query(..., "Search term using boolean queries")):
                 "ERROR": str(e),
             }
         }
+
+    # Run the ad-hoc experiment using the index at LOCAL_INDEX_PATH
     with AdHocExperiment(PubmedIndexer(index_path=LOCAL_INDEX_PATH), raw_query=term) as experiment:
         results = experiment.run
         lock.release()
@@ -57,7 +67,9 @@ async def esearch(term: str = Query(..., "Search term using boolean queries")):
             "querytranslation": formatted_query
         }
 
-# Implementing EFetch endpoint   
+
+# Implementing EFetch endpoint
+# TODO finish implementation, by adding more options according to PubMed Documentation   
 @app.get("/efetch")
 async def efetch(id: str = Query(..., description="Comma seperated list of UIDs (e.g. '12345678', '90123456')")): 
     uid_list = [p.strip() for p in id.split(',') if p.strip()]

@@ -15,6 +15,10 @@ baseline
 lib
 *.jsonl
 *.json
+*.xml
+
+test_data
+test_data/pubmed25n0579.xml
 
 app/baseline
 app/index

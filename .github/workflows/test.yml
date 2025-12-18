@@ -1,0 +1,43 @@
+name: Test OpenPM
+
+on:
+  push:
+    branches: [ docker_v1 ]
+  pull_request:
+    branches: [ docker_v1 ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build data image (create index from test_data)
+        run: |
+          docker build -t openpm-data-test -f Dockerfile.data .
+          docker run --rm \
+            -e LOCAL_INDEX_PATH=/app/index \
+            -v ${{ github.workspace }}/test_data:/test_data \
+            -v ${{ github.workspace }}/index:/app/index \
+            openpm-data-test
+
+      - name: Build API image
+        run: docker build -t openpm-api-test -f Dockerfile.api .
+
+      - name: Start API using test index
+        run: |
+          docker run -d --name api \
+            -p 8000:8000 \
+            -e LOCAL_INDEX_PATH=/app/index \
+            -v ${{ github.workspace }}/index:/app/index \
+            openpm-api-test
+
+      - name: Wait for API
+        run: sleep 5
+
+      - name: Run test request
+        run: |
+          curl --fail --silent --show-error \
+            "http://localhost:8000/esearch?term=test"
