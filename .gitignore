@@ -17,6 +17,7 @@ lib
 *.json
 *.xml
 
+!pubmed-processed.jsonl
 test_data
 test_data/pubmed25n0579.xml
 
