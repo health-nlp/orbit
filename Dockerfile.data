@@ -2,7 +2,8 @@ FROM ghcr.io/hscells/pybool_ir:master
 
 WORKDIR /app
 COPY main.py pyproject.toml uv.lock /app/
-RUN pip install uv
+COPY pyproject.toml uv.lock /app/
+RUN pip install --retries=10 --default-timeout=500 uv
 RUN uv sync
 RUN uv run -m pip install /pybool_ir/pylucene/dist/*.whl
 RUN uv run -m pip install -e /pybool_ir

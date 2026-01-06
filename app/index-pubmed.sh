@@ -3,23 +3,41 @@ RUN_MODE=${MODE:-"full"}
 echo "----------------------------------------"
 echo "MODE: $RUN_MODE"
 echo "DOWNLOAD TARGET: $DOWNLOAD_TARGET"
+
+
 # ensure, directory exists
 mkdir -p "$DOWNLOAD_TARGET"
-if [ "$RUN_MODE" == "test" ]; then
+
+
+download_if_missing() {
+  if [ -d "$DOWNLOAD_TARGET" ] && [ "$(ls -A "$DOWNLOAD_TARGET")" ]; then
+    echo ">>> Baseline exists, skipping download"
+  else
+    echo ">>> Downloading PubMed data"
+    uv run -m pybool_ir.cli pubmed download -b "$DOWNLOAD_TARGET" "$@"
+  fi
+}
+
+if [ "$RUN_MODE" = "test" ]; then
     # Download raw PubMed data.
     echo ">>> TEST_MODE active: loading minimal dataset"
-    uv run -m pybool_ir.cli pubmed download -b "$DOWNLOAD_TARGET" --limit 1
+    download_if_missing --limit 1
+    # uv run -m pybool_ir.cli pubmed download -b "$DOWNLOAD_TARGET" --limit 1
 
     # Convert the data into a single JSONL file.
     echo ">>> Prepare raw data"
     uv run -m pybool_ir.cli pubmed process -b "$DOWNLOAD_TARGET" -o full_tmp.jsonl
+    [ ! -s full_tmp.jsonl ] && gzip -dc "$DOWNLOAD_TARGET"/*.xml.gz > full_tmp.jsonl
 
-    head -n 1 full_tmp.jsonl > pubmed-processed.jsonl
+    #head -n 1 full_tmp.jsonl > pubmed-processed.jsonl
+    cat full_tmp.jsonl > pubmed-processed.jsonl
     rm full_tmp.jsonl
 else
     echo "FULL MODE active: downloading full datase from baseline..."
     # Download raw PubMed data.
-    uv run -m pybool_ir.cli pubmed download -b "$DOWNLOAD_TARGET"
+    download_if_missing
+    #uv run -m pybool_ir.cli pubmed download -b "$DOWNLOAD_TARGET"
+    
     # Convert the data into a single JSONL file.
     uv run -m pybool_ir.cli pubmed process -b "$DOWNLOAD_TARGET" -o pubmed-processed.jsonl
 fi

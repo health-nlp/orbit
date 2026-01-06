@@ -24,3 +24,5 @@ app/baseline
 app/index
 app/*.jsonl
 app/*.json
+
+pybool_ir/

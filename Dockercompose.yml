@@ -1,3 +1,4 @@
+# TODO Test skript -> check if this works
 services:
   data_builder:
     platform: linux/amd64
@@ -11,8 +12,6 @@ services:
     environment:
       - MODE=test
       - DOWNLOAD_TARGET=baseline
-    # Wenn das Skript index-pubmed.sh lokal liegt und in den Container soll,
-    # muss sichergestellt sein, dass es LF Zeilenumbrüche hat.
     volumes:
       - ./app:/app/
       - ./index:/app/index
@@ -30,14 +29,9 @@ services:
     depends_on:
       - data_builder
     ports:
-      - "8000:8000"  # ACHTUNG: FastAPI läuft standardmäßig auf 8000. Ihr Mapping war 8000:3000. Wenn Sie den Port in FastAPI nicht geändert haben, war 3000 falsch.
+      - "8000:8000"  # check mapping for 8000:3000
     environment:
-      # Wichtig für PyLucene, falls es im Dockerfile gesetzt wurde,
-      # wird es manchmal zur Laufzeit überschrieben, wenn man nicht aufpasst.
       - PYTHONPATH=/api
     volumes:
-      # KORREKTUR: Der Container arbeitet in /api (laut Build Log).
-      # Wir mounten das aktuelle Verzeichnis (.) nach /api, damit Hot-Reloading funktioniert.
-      # Wir schließen .venv aus, damit das venv des Containers genutzt wird, nicht das von Windows.
       - ./:/api
     restart: always
