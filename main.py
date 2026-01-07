@@ -20,20 +20,66 @@ vm = lucene.getVMEnv()
 lock = threading.Lock()
 parser = PubmedQueryParser()
 
-@app.get("/esearch")
-async def esearch(term: str = Query(..., "Search term using boolean queries")):
-    """
+
+"""
     ESearch-like endpoint.
     Example: GET /esearch?term=cancer+AND+therapy
-    """
+"""
+@app.get("/esearch")
+async def esearch(
+    term: str = Query(..., "Search term using boolean queries"),
+    retstart: str = Query(0, "the start index for UIDs (default=0)"),
+    retmax: str = Query(20, "the end index for UIDs (default=20)"), 
+    retmode: str = Query("xml", "Return format xml or json (default=xml)"),
+    field: str = Query(None, "Limitation to certain Entrez fields")
+):
+
+    # filtering for fields
+    effective_query = term
+    if field: 
+        words = term.split()
+        operators = {"AND", "OR", "NOT", "AND NOT"}
+
+        processed_terms = [f"{word}[{field}]" if word.upper() in operators and "[" not in words else word for word in words]
+        effective_query = " ".join(processed_terms)
+
     lock.acquire()
-    vm.attachCurrentThread()
     try:
+        vm.attachCurrentThread()
+
         # Parse and prepare query (will raise on malformed query)
-        ast = parser.parse_ast(term)
-        parser.parse_lucene(term)
+        ast = parser.parse_ast(effective_query)
+        parser.parse_lucene(effective_query)
         formatted_query = parser.format(ast)
         print("Formatted query:", formatted_query)
+    
+        with AdHocExperiment(PubmedIndexer(index_path=LOCAL_INDEX_PATH), raw_query=formatted_query) as experiment:
+            results.experiment.run()
+
+            total_count = len(results)
+            paginated_results = results[retstart : retstart+retmax]
+            id_list = [str(res.doc_id) for res in paginated_results]
+
+            return {
+                "header": {
+                    "type": "esearch",
+                    "version": "0.3-openpm",
+                    "retmode": retmode
+                }, 
+                "esearchresult": {
+                    "count": str(total_count),
+                    "retstart": str(retstart),
+                    "retmax": str(len(id_list)),
+                    "idlist": [str(res.doc_id) for res in results[retstart:retmax]],
+                },
+                "translationset": {
+                    "from": term,
+                    "to": formatted_query
+                },
+                "querytranslation": formatted_query
+            }
+    
+    
     except Exception as e:
         lock.release()
         return {
@@ -59,7 +105,7 @@ async def esearch(term: str = Query(..., "Search term using boolean queries")):
                 "count": f"{len(results)}",
                 "retmax": "-1",
                 "retstart": "0",
-                "idlist": [str(result.doc_id) for result in results],
+                "idlist": [str(result.doc_id) for result in results[retstart:retmax]],
             },
             "translationset": {
 
@@ -68,39 +114,92 @@ async def esearch(term: str = Query(..., "Search term using boolean queries")):
         }
 
 
+
+
+
+
 # Implementing EFetch endpoint
 # TODO finish implementation, by adding more options according to PubMed Documentation   
-@app.get("/efetch")
-async def efetch(id: str = Query(..., description="Comma seperated list of UIDs (e.g. '12345678', '90123456')")): 
-    uid_list = [p.strip() for p in id.split(',') if p.strip()]
+@app.get("efetch")
+async def efetch(
+    id: str = Query(..., description="Comma seperated list of UIDs (e.g. '12345678', '90123456')"),
+    retmode: str = Query("json", description="Return format (json is default)")
+):
+    
+    uid_list = [p.strip() for p in id.split(",") if p.strip()]
 
     lock.acquire()
     try: 
         vm.attachCurrentThread()
-        
-        lucene_query = " OR ".join([f"id:'{uid}'" for uid in uid_list])
+        query = " OR ".join([f"id:'{uid}'" for uid in uid_list])
+        ast = parser.parse_ast(query)
+        parser.parse_lucene(query)
+        lucene_query = parser.format(ast)
         print(f"lucene_query: {lucene_query}")
+    
 
-        indexer = PubmedIndexer(index_path=LOCAL_INDEX_PATH, store_fields=True)
-        indexer.open()
+        with AdHocExperiment(PubmedIndexer(index_path=LOCAL_INDEX_PATH, store_field=True)) as experiment:
+            articles: List[PubmedArticle] = experiment.indexer.search(query=lucene_query, n_hits=len(uid_list))
+            article_dicts = [article.to_dict() for article in articles]
 
-        articles: List[PubmedArticle] = indexer.search(query=lucene_query, n_hits=len(uid_list))
-        article_dicts: List[Dict[str, Any]] = [article.to_dict() for article in articles]
-
-        indexer.close()
-
+            return {
+                "header": {
+                    "type": "efetch",
+                    "version": "0.3-openpm",
+                    "retmode": retmode
+                },
+                "articleList": article_dicts,
+                "error": None
+            }
+    except Exception as e: 
+        lock.release()
         return {
             "header": {
                 "type": "efetch",
-                "version": "0.3-openpm",
+                "verison": "0.3-openpm"
             },
-            "articleList": article_dicts,
-            "error": None            
+            "efetchresult": {
+                "ERROR": str(e),
+            }
         }
-    except Exception as e: 
-        raise HTTPException(
-            status_code = 500,
-            detail = f"An error occured while processing Efetch or accessing index: {e}"
-        )
-    finally:
+
+    finally: 
         lock.release()
+
+
+
+#OLD
+# @app.get("/efetch")
+# async def efetch(id: str = Query(..., description="Comma seperated list of UIDs (e.g. '12345678', '90123456')")): 
+#     uid_list = [p.strip() for p in id.split(',') if p.strip()]
+
+#     lock.acquire()
+#     try: 
+#         vm.attachCurrentThread()
+        
+#         lucene_query = " OR ".join([f"id:'{uid}'" for uid in uid_list])
+#         print(f"lucene_query: {lucene_query}")
+
+#         indexer = PubmedIndexer(index_path=LOCAL_INDEX_PATH, store_fields=True)
+#         indexer.open()
+
+#         articles: List[PubmedArticle] = indexer.search(query=lucene_query, n_hits=len(uid_list))
+#         article_dicts: List[Dict[str, Any]] = [article.to_dict() for article in articles]
+
+#         indexer.close()
+
+#         return {
+#             "header": {
+#                 "type": "efetch",
+#                 "version": "0.3-openpm",
+#             },
+#             "articleList": article_dicts,
+#             "error": None            
+#         }
+#     except Exception as e: 
+#         raise HTTPException(
+#             status_code = 500,
+#             detail = f"An error occured while processing Efetch or accessing index: {e}"
+#         )
+#     finally:
+#         lock.release()

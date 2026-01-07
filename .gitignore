@@ -17,11 +17,10 @@ lib
 *.json
 *.xml
 
-!pubmed-processed.jsonl
-!app/pubmed-processed.jsonl
 test_data
 test_data/pubmed25n0579.xml
 
+app/pubmed-processed.jsonl
 app/baseline
 app/index
 app/*.jsonl

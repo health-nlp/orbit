@@ -30,7 +30,6 @@ services:
       - data_builder
     ports:
         - "8000:8000"  # check mapping for 8000:3000
-
     environment:
       - PYTHONPATH=/api
     volumes:
