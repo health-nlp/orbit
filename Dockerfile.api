@@ -1,15 +1,24 @@
 FROM openpm-data:latest
 
+ENV UV_CACHE_DIR=/opt/uv-cache \
+    UV_PYTHON_CACHE_DIR=/opt/uv-cache/python \
+    UV_LINK_MODE=copy
+
 WORKDIR /api
 # COPY ./main.py ./.venv ./pyproject.toml ./uv.lock /api
 COPY ./main.py ./pyproject.toml ./uv.lock /api/
 COPY ./pybool_ir /api/pybool_ir
 
 # RUN uv sync
-RUN uv sync --frozen --no-cache
+RUN --mount=type=cache,target=/opt/uv-cache \ 
+    uv sync --frozen --no-cache
 RUN uv add fastapi --extra standard
-RUN uv run -m pip install /pybool_ir/pylucene/dist/*.whl
-RUN uv run -m pip install -e /pybool_ir
+RUN --mount=type=cache,target=/opt/uv-cache \ 
+    uv run -m pip install /pybool_ir/pylucene/dist/*.whl
+RUN --mount=type=cache,target=/opt/uv-cache \
+    uv run -m pip install -e /pybool_ir
 EXPOSE 3000
 
 ENTRYPOINT [ "uv", "run", "-m", "fastapi", "dev", "main.py" ]
+
+

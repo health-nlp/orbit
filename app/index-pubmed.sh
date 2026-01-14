@@ -27,7 +27,9 @@ if [ "$RUN_MODE" = "test" ]; then
     # Convert the data into a single JSONL file.
     echo ">>> Prepare raw data"
     uv run -m pybool_ir.cli pubmed process -b "$DOWNLOAD_TARGET" -o full_tmp.jsonl
-    [ ! -s full_tmp.jsonl ] && gzip -dc "$DOWNLOAD_TARGET"/*.xml.gz > full_tmp.jsonl
+
+    # just for testing: use only one .xml.gz file
+    [ ! -s full_tmp.jsonl ] && gzip -dc "$DOWNLOAD_TARGET"/*.xml.gz > full_tmp.jsonl 
 
     #head -n 1 full_tmp.jsonl > pubmed-processed.jsonl
     cat full_tmp.jsonl > pubmed-processed.jsonl

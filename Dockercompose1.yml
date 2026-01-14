@@ -1,35 +1,72 @@
 services:
-  data_builder: 
+  data_builder:
     platform: linux/amd64
     build:
       context: .
       dockerfile: Dockerfile.data
-      args:
-        PLATFORM: linux/amd64
     image: openpm-data:latest
     container_name: openpm_data_builder
     environment:
-      - MODE=test
-      - DOWNLOAD_TARGET=baseline
+      MODE: test
+      DOWNLOAD_TARGET: baseline
     volumes:
-      - ./app:/app/
+      - ./app:/app
       - ./index:/app/index
-    restart: 'no'
+    restart: "no"
 
   api:
     platform: linux/amd64
-    build: 
+    build:
       context: .
       dockerfile: Dockerfile.api
-      args:
-        PLATFORM: linux/amd64
-    image: openpm_api:latest
+    image: openpm-api:latest
     container_name: openpm_api
     depends_on:
-      - data_builder
-    ports: 
+      data_builder:
+        condition: service_completed_successfully
+    ports:
       - "8000:3000"
-    volumes: 
-      - ./app:/app/
+    volumes:
+      - ./app:/app
       - ./index:/app/index
     restart: always
+
+
+
+
+
+# services:
+#   data_builder: 
+#     platform: linux/amd64
+#     build:
+#       context: .
+#       dockerfile: Dockerfile.data
+#       args:
+#         PLATFORM: linux/amd64
+#     image: openpm-data:latest
+#     container_name: openpm_data_builder
+#     environment:
+#       - MODE=test
+#       - DOWNLOAD_TARGET=baseline
+#     volumes:
+#       - ./app:/app/
+#       - ./index:/app/index
+#     restart: 'no'
+
+#   api:
+#     platform: linux/amd64
+#     build: 
+#       context: .
+#       dockerfile: Dockerfile.api
+#       args:
+#         PLATFORM: linux/amd64
+#     image: openpm_api:latest
+#     container_name: openpm_api
+#     depends_on:
+#       - data_builder
+#     ports: 
+#       - "8000:3000"
+#     volumes: 
+#       - ./app:/app/
+#       - ./index:/app/index
+#     restart: always

@@ -2,10 +2,13 @@ FROM ghcr.io/hscells/pybool_ir:master
 
 WORKDIR /app
 COPY main.py pyproject.toml uv.lock /app/
-COPY pyproject.toml uv.lock /app/
+# COPY pyproject.toml uv.lock /app/
 RUN pip install --retries=10 --default-timeout=500 uv
-RUN uv sync
-RUN uv run -m pip install /pybool_ir/pylucene/dist/*.whl
-RUN uv run -m pip install -e /pybool_ir
+RUN --mount=type=cache,target=/opt/uv-cache \
+    uv sync
+RUN  --mount=type=cache,target=/opt/uv-cache \
+    uv run -m pip install /pybool_ir/pylucene/dist/*.whl
+RUN --mount=type=cache,target=/opt/uv-cache \
+    uv run -m pip install -e /pybool_ir
 
 ENTRYPOINT ["sh", "index-pubmed.sh"]
