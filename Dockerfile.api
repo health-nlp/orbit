@@ -19,6 +19,6 @@ RUN --mount=type=cache,target=/opt/uv-cache \
     uv run -m pip install -e /pybool_ir
 EXPOSE 3000
 
-ENTRYPOINT [ "uv", "run", "-m", "fastapi", "dev", "main.py" ]
+ENTRYPOINT [ "uv", "run", "-m", "fastapi", "dev", "main.py", "--host", "0.0.0.0", "--port", "8000"]
 
 
