@@ -11,6 +11,7 @@ wheels/
 
 .DS_Store
 index
+baseline_old
 baseline
 lib
 *.jsonl
@@ -21,6 +22,7 @@ test_data
 test_data/pubmed25n0579.xml
 
 app/pubmed-processed.jsonl
+app/baseline_old
 app/baseline
 app/index
 app/*.jsonl

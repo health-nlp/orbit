@@ -1,10 +1,12 @@
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Response
 
 from pybool_ir.experiments.retrieval import AdHocExperiment
 from pybool_ir.index.pubmed import PubmedIndexer
 from pybool_ir.query.pubmed.parser import PubmedQueryParser
 from pybool_ir.index.pubmed_document import PubmedArticle
 from typing import List, Dict, Any
+
+import searchresult as sr
 
 import threading
 import lucene
@@ -63,38 +65,29 @@ async def esearch(
             paginated_results = results[retstart : retstart+retmax]
             id_list = [str(res.doc_id) for res in paginated_results]
 
-            # return block -> TODO adjust for retmode (currently json, xml missing)
-            return {
-                "header": {
-                    "type": "esearch",
-                    "version": "0.3-openpm",
-                    "retmode": retmode
-                }, 
-                "esearchresult": {
-                    "count": str(total_count),
-                    "retstart": str(retstart),
-                    "retmax": str(len(id_list)),
-                    "idlist": [str(res.doc_id) for res in results[retstart:retmax]],
-                },
-                "translationset": {
-                    "from": term,
-                    "to": formatted_query
-                },
-                "querytranslation": formatted_query
-            }
+            result_obj = sr.ESearch(
+                format=retmode,
+                count=str(total_count),
+                retmax=str(retmax),
+                retstart=str(retstart),
+                id_list=id_list,
+                querytranslation=formatted_query,
+                translationset={"from": term, "to": formatted_query}
+            )
+
+            if retmode.lower() == "xml":
+                return Response(content=result_obj.to_xml(), media_type="application/xml")
+            elif retmode.lower() == "json":
+                return Response(content=result_obj.to_json(), media_type="application/json") 
+            else: 
+                return Response(content=result_obj.to_json(), media_tpye="application/json")
     
     
     except Exception as e:
         lock.release()
-        return {
-            "header": {
-                "type": "esearch",
-                "version": "0.3-openpm"
-            },
-            "esearchresult": {
-                "ERROR": str(e),
-            }
-        }
+
+        result_obj = sr.ESearch(error=e)
+        return Response(content=result_obj, media_type="application/json")
     finally: 
         lock.release()
 
@@ -102,7 +95,8 @@ async def esearch(
 
 
 # Implementing EFetch endpoint
-# TODO finish implementation, by adding more options according to PubMed Documentation   
+# TODO finish implementation, by adding more options according to PubMed Documentation  
+# TODO adjust return structure to use searchresult classes 
 @app.get("efetch")
 async def efetch(
     id: str = Query(..., description="Comma seperated list of UIDs (e.g. '12345678', '90123456')"),
@@ -150,7 +144,6 @@ async def efetch(
         lock.release()
 
 
-
 #OLD
 # @app.get("/efetch")
 # async def efetch(id: str = Query(..., description="Comma seperated list of UIDs (e.g. '12345678', '90123456')")): 
@@ -186,17 +179,6 @@ async def efetch(
 #         )
 #     finally:
 #         lock.release()
-
-
-
-
-
-
-
-
-
-
-
 
 
 

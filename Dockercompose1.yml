@@ -12,7 +12,7 @@ services:
     volumes:
       - ./app:/app
       - ./index:/app/index
-    restart: "no"
+    restart: "always"
 
   api:
     platform: linux/amd64

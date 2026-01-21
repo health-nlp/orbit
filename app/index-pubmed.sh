@@ -14,7 +14,12 @@ download_if_missing() {
     echo ">>> Baseline exists, skipping download"
   else
     echo ">>> Downloading PubMed data"
-    uv run -m pybool_ir.cli pubmed download -b "$DOWNLOAD_TARGET" "$@"
+     while true; do
+      uv run -m pybool_ir.cli pubmed download -b "$DOWNLOAD_TARGET" && break
+      echo "Download failed – retrying in 30 seconds..."
+      sleep 10
+    done
+    # uv run -m pybool_ir.cli pubmed download -b "$DOWNLOAD_TARGET" "$@"
   fi
 }
 
@@ -37,15 +42,15 @@ if [ "$RUN_MODE" = "test" ]; then
 else
     echo "FULL MODE active: downloading full datase from baseline..."
     # Download raw PubMed data.
-    # download_if_missing
+    download_if_missing
     #uv run -m pybool_ir.cli pubmed download -b "$DOWNLOAD_TARGET"
     
-    
-    while true; do
-      uv run -m pybool_ir.cli pubmed download -b "$DOWNLOAD_TARGET" && break
-      echo "Download failed – retrying in 30 seconds..."
-      sleep 10
-    done
+    # TODO delte below (now it is in download if missing)
+    # while true; do
+    #   uv run -m pybool_ir.cli pubmed download -b "$DOWNLOAD_TARGET" && break
+    #   echo "Download failed – retrying in 30 seconds..."
+    #   sleep 10
+    # done
     
     # Convert the data into a single JSONL file.
     uv run -m pybool_ir.cli pubmed process -b "$DOWNLOAD_TARGET" -o pubmed-processed.jsonl
