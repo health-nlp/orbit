@@ -7,7 +7,7 @@ services:
     image: openpm-data:latest
     container_name: openpm_data_builder
     environment:
-      MODE: test
+      MODE: full
       DOWNLOAD_TARGET: baseline
     volumes:
       - ./app:/app
