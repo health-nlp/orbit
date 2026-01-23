@@ -53,7 +53,7 @@ else
     # done
     
     # Convert the data into a single JSONL file.
-    uv run -m pybool_ir.cli pubmed process -b "$DOWNLOAD_TARGET" -o pubmed-processed.jsonl
+    uv run -m pybool_ir.cli pubmed process -b "$DOWNLOAD_TARGET" -o pubmed-processed.jsonl # TODO uncomment
 fi
 
 # Index the processed PubMed data.
