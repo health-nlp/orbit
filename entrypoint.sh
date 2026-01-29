@@ -13,7 +13,8 @@ elif [ "$MODE" = "test" ]; then
 
 elif [ "$MODE" = "api" ]; then
     echo "Starting API"
-    touch __init__.py
+    ls -alh
+    pwd
     exec uv run -m fastapi dev main.py --host 0.0.0.0 --port 8333
 
 else 
