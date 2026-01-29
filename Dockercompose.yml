@@ -1,0 +1,32 @@
+services:
+  data_builder:
+    platform: linux/amd64
+    build: .
+    image: openpm:latest
+    container_name: openpm_data_builder
+    environment:
+      MODE: api
+      DOWNLOAD_TARGET: baseline
+    volumes:
+      - ./app:/app
+      - ./index:/app/index
+    restart: "no"
+
+  api:
+    platform: linux/amd64
+    # build: .
+    image: openpm:latest
+    container_name: openpm_api
+    environment:
+      MODE: api
+    #depends_on:
+    #  data_builder:
+    #    condition: service_completed_successfully
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./app:/app
+      - ./index:/app/index
+      - ./main.py:/main.py  
+      - ./searchresult.py:/app/searchresult.py
+    restart: always

@@ -11,12 +11,23 @@ wheels/
 
 .DS_Store
 index
+baseline_old
 baseline
 lib
 *.jsonl
 *.json
+*.xml
 
+test_data
+test_data/pubmed25n0579.xml
+
+app/pubmed-processed.jsonl
+app/baseline_old
 app/baseline
 app/index
+app/pubmed_partitioned
 app/*.jsonl
 app/*.json
+
+
+pybool_ir/
