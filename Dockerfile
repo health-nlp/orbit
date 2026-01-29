@@ -27,7 +27,7 @@ RUN --mount=type=cache,target=/opt/uv-cache \
 RUN uv pip install --system "fastapi[standard]"
 
 # ---------- App ----------
-COPY main.py /main.py
+COPY main.py /app/
 COPY searchresult.py /app/searchresult.py
 COPY entrypoint.sh /entrypoint.sh
 
