@@ -3,7 +3,7 @@ from fastapi import FastAPI, HTTPException, Query, Response
 from pybool_ir.experiments.retrieval import AdHocExperiment
 from pybool_ir.index.pubmed import PubmedIndexer
 from pybool_ir.query.pubmed.parser import PubmedQueryParser
-from pybool_ir.index.pubmed_document import PubmedArticle
+from pybool_ir.index.pubmed import PubmedArticle
 from typing import List, Dict, Any
 
 import searchresult as sr
@@ -29,11 +29,11 @@ parser = PubmedQueryParser()
 """
 @app.get("/esearch")
 async def esearch(
-    term: str = Query(..., "Search term using boolean queries"),
-    retstart: str = Query(0, "the start index for UIDs (default=0)"),
-    retmax: str = Query(20, "the end index for UIDs (default=20)"), 
-    retmode: str = Query("xml", "Return format xml or json (default=xml)"),
-    field: str = Query(None, "Limitation to certain Entrez fields")
+    term: str = Query(default=..., description="Search term using boolean queries"),
+    retstart: str = Query(default="0", description="the start index for UIDs (default=0)"),
+    retmax: str = Query(default="20", description="the end index for UIDs (default=20)"), 
+    retmode: str = Query(default="xml", description="Return format xml or json (default=xml)"),
+    field: str = Query(default=None, description="Limitation to certain Entrez fields")
 ):
     
     # filtering for fields
@@ -99,8 +99,8 @@ async def esearch(
 # TODO adjust return structure to use searchresult classes 
 @app.get("efetch")
 async def efetch(
-    id: str = Query(..., description="Comma seperated list of UIDs (e.g. '12345678', '90123456')"),
-    retmode: str = Query("json", description="Return format (json is default)")
+    id: str = Query(default=..., description="Comma seperated list of UIDs (e.g. '12345678', '90123456')"),
+    retmode: str = Query(default="json", description="Return format (json is default)")
 ):
     
     uid_list = [p.strip() for p in id.split(",") if p.strip()]
@@ -143,6 +143,8 @@ async def efetch(
     finally: 
         lock.release()
 
+
+# ------------------------------------------------------
 
 #OLD
 # @app.get("/efetch")

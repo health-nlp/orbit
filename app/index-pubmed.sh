@@ -43,28 +43,12 @@ else
     echo "FULL MODE active: downloading full datase from baseline..."
     # Download raw PubMed data.
     download_if_missing
-    #uv run -m pybool_ir.cli pubmed download -b "$DOWNLOAD_TARGET"
-    
-    # TODO delte below (now it is in download if missing)
-    # while true; do
-    #   uv run -m pybool_ir.cli pubmed download -b "$DOWNLOAD_TARGET" && break
-    #   echo "Download failed – retrying in 30 seconds..."
-    #   sleep 10
-    # done
     
     # Convert the data into a single JSONL file.
-    uv run -m pybool_ir.cli pubmed process -b "$DOWNLOAD_TARGET" -o pubmed-processed.jsonl # TODO uncomment
+    uv run -m pybool_ir.cli pubmed process -b "$DOWNLOAD_TARGET" -o pubmed-processed.jsonl
 fi
 
 # Index the processed PubMed data.
 echo ">>> Creating Index..."
 uv run -m pybool_ir.cli pubmed index -b pubmed-processed.jsonl -s 1 -i index
 echo "DONE!"
-
-# OLD CODE: TODO remove
-# # Download raw PubMed data.
-# uv run -m pybool_ir.cli pubmed download -b "$DOWNLOAD_TARGET"
-# # Convert the data into a single JSONL file.
-# uv run -m pybool_ir.cli pubmed process -b "$DOWNLOAD_TARGET" -o pubmed-processed.jsonl
-# # Index the processed PubMed data.
-# uv run -m pybool_ir.cli pubmed index -b pubmed-processed.jsonl -s 1 -i index

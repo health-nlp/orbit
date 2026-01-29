@@ -25,7 +25,9 @@ app/pubmed-processed.jsonl
 app/baseline_old
 app/baseline
 app/index
+app/pubmed_partitioned
 app/*.jsonl
 app/*.json
+
 
 pybool_ir/
