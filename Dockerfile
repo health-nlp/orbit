@@ -2,8 +2,7 @@ FROM ghcr.io/hscells/pybool_ir:master
 
 ENV UV_CACHE_DIR=/opt/uv-cache \
     UV_PYTHON_CACHE_DIR=/opt/uv-cache/python \
-    UV_LINK_MODE=copy \
-    UV_HTTP_TIMEOUT=2000
+    UV_LINK_MODE=copy
 
 WORKDIR /app
 
@@ -16,14 +15,13 @@ COPY pyproject.toml uv.lock /app/
 RUN --mount=type=cache,target=/opt/uv-cache \
     uv sync
 
-# PyLucene (Nutzen wir aus dem vorinstallierten Verzeichnis des Basis-Images)
+# PyLucene
 RUN --mount=type=cache,target=/opt/uv-cache \
     uv run -m pip install /pybool_ir/pylucene/dist/*.whl
 
-# Install pybool_ir directly from GitHub using --no-deps 
-# We do this to avoid the "local file source" error, as dependencies are already there
+# Installing pybool_ir from repo
 RUN --mount=type=cache,target=/opt/uv-cache \
-    uv pip install --system --no-deps git+https://github.com/hscells/pybool_ir.git
+    uv run -m pip install --retries 5 --timeout 2000 -e /pybool_ir
 
 # API dependencies
 RUN uv pip install --system "fastapi[standard]"
