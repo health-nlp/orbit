@@ -34,8 +34,8 @@ COPY ./app ./
 #COPY main.py /app/main.py
 #COPY entrypoint.sh /entrypoint.sh
 
-RUN chmod +x /entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
 
 EXPOSE 8333
 
-ENTRYPOINT ["/entrypoint.sh"]
+ENTRYPOINT ["/app/entrypoint.sh"]
