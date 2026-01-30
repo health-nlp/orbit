@@ -14,7 +14,7 @@ COPY pyproject.toml uv.lock ./
 RUN --mount=type=cache,target=/opt/uv-cache \
     uv sync
 
-RUN --mount=type=cahce,target=/opt/uv-cache \
+RUN --mount=type=cache,target=/opt/uv-cache \
     uv pip install --system "lupyne<3.0.0"
 
 # PyLucene
