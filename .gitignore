@@ -29,5 +29,7 @@ app/pubmed_partitioned
 app/*.jsonl
 app/*.json
 
+SearchResults.py
+
 
 pybool_ir/

@@ -19,6 +19,7 @@ services:
     container_name: openpm_api
     environment:
       MODE: api
+    # outcommented for api part: if not outcommented, every run would need previous data_builder part
     #depends_on:
     #  data_builder:
     #    condition: service_completed_successfully
@@ -27,6 +28,8 @@ services:
     volumes:
       - ./app:/app
       - ./index:/app/index
-      - ./main.py:/main.py  
-      - ./searchresult.py:/app/searchresult.py
+      # outcommented for testing -> may be removed in future, because mounting them is not needed
+      # - ./index:/app/index
+      # - ./main.py:/main.py  
+      # - ./searchresult.py:/app/searchresult.py
     restart: always

@@ -9,8 +9,7 @@ WORKDIR /app
 # ---------- Dependencies ----------
 RUN pip install --retries=10 --default-timeout=500 uv
 
-COPY pyproject.toml uv.lock /app/
-
+COPY pyproject.toml uv.lock ./
 # Base dependencies
 RUN --mount=type=cache,target=/opt/uv-cache \
     uv sync
@@ -27,12 +26,17 @@ RUN --mount=type=cache,target=/opt/uv-cache \
 RUN uv pip install --system "fastapi[standard]"
 
 # ---------- App ----------
-COPY main.py /app/main.py
-COPY searchresult.py /app/searchresult.py
-COPY entrypoint.sh /entrypoint.sh
 
-RUN chmod +x /entrypoint.sh
+COPY ./app ./
+
+
+# outcommented - will be deleted if not needed anymore
+#COPY searchresult.py /app/searchresult.py
+#COPY main.py /app/main.py
+#COPY entrypoint.sh /entrypoint.sh
+
+RUN chmod +x ./entrypoint.sh
 
 EXPOSE 8333
 
-ENTRYPOINT ["/entrypoint.sh"]
+ENTRYPOINT ["./entrypoint.sh"]
