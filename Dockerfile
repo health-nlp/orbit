@@ -14,8 +14,9 @@ COPY pyproject.toml uv.lock ./
 RUN --mount=type=cache,target=/opt/uv-cache \
     uv sync
 
+# pybool_ir lucene results in assertion error -> force download of older lupyne version    
 RUN --mount=type=cache,target=/opt/uv-cache \
-    uv pip install --system "lupyne<3.0.0"
+    uv pip install --system --force-reinstall "lupyne<3.0.0"
 
 # PyLucene
 RUN --mount=type=cache,target=/opt/uv-cache \
