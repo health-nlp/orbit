@@ -1,4 +1,4 @@
-FROM ghcr.io/hscells/pybool_ir:master
+FROM ghcr.io/hscells/pybool_ir:sha256-1fdb69e0bac75c87f8fe31c654dae3f9f98c47cdeb50a2d88f101501123e67fb
 
 ENV UV_CACHE_DIR=/opt/uv-cache \
     UV_PYTHON_CACHE_DIR=/opt/uv-cache/python \
@@ -13,10 +13,6 @@ COPY pyproject.toml uv.lock ./
 # Base dependencies
 RUN --mount=type=cache,target=/opt/uv-cache \
     uv sync
-
-# pybool_ir lucene results in assertion error -> force download of older lupyne version    
-RUN --mount=type=cache,target=/opt/uv-cache \
-    uv pip install --system --force-reinstall "lupyne<3.0.0"
 
 # PyLucene
 RUN --mount=type=cache,target=/opt/uv-cache \
