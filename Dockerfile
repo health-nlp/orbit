@@ -1,4 +1,4 @@
-FROM ghcr.io/hscells/pybool_ir:sha256-1fdb69e0bac75c87f8fe31c654dae3f9f98c47cdeb50a2d88f101501123e67fb
+FROM ghcr.io/hscells/pybool_ir:master
 
 ENV UV_CACHE_DIR=/opt/uv-cache \
     UV_PYTHON_CACHE_DIR=/opt/uv-cache/python \
