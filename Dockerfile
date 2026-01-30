@@ -26,7 +26,6 @@ RUN --mount=type=cache,target=/opt/uv-cache \
 RUN uv pip install --system "fastapi[standard]"
 
 # ---------- App ----------
-
 COPY ./app ./
 
 
