@@ -1,4 +1,5 @@
-FROM ghcr.io/hscells/pybool_ir:master
+# FROM ghcr.io/hscells/pybool_ir:master
+FROM python:3.10-slim
 
 ENV UV_CACHE_DIR=/opt/uv-cache \
     UV_PYTHON_CACHE_DIR=/opt/uv-cache/python \
