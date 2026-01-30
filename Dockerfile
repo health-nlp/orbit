@@ -26,16 +26,18 @@ RUN --mount=type=cache,target=/opt/uv-cache \
 RUN uv pip install --system "fastapi[standard]"
 
 # ---------- App ----------
-COPY ./app ./
+COPY ./app /app
+RUN chmod +x /app/entrypoint.sh
+ENTRYPOINT ["/app/entrypoint.sh"]
 
 
 # outcommented - will be deleted if not needed anymore
-COPY searchresult.py /app/searchresult.py
-COPY main.py /app/main.py
-COPY entrypoint.sh /entrypoint.sh
+# COPY searchresult.py /app/searchresult.py
+# COPY main.py /app/main.py
+# COPY entrypoint.sh /entrypoint.sh
 
-RUN chmod +x /entrypoint.sh
+# RUN chmod +x /entrypoint.sh
 
-EXPOSE 8333
+# EXPOSE 8333
 
-ENTRYPOINT ["/entrypoint.sh"]
+# ENTRYPOINT ["/app/entrypoint.sh"]
