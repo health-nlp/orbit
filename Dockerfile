@@ -28,6 +28,8 @@ RUN --mount=type=cache,target=/opt/uv-cache \
 # API dependencies
 RUN uv pip install --system "fastapi[standard]"
 
+RUN uv pip install "jcc"
+
 # ---------- App ----------
 COPY ./app /app
 RUN chmod +x /app/entrypoint.sh
