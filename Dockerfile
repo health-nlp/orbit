@@ -28,7 +28,7 @@ RUN --mount=type=cache,target=/opt/uv-cache \
 # API dependencies
 RUN uv pip install --system "fastapi[standard]"
 
-RUN uv pip install "jcc"
+RUN uv add "jcc"
 
 # ---------- App ----------
 COPY ./app /app
