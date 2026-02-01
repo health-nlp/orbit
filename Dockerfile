@@ -20,7 +20,7 @@ RUN --mount=type=cache,target=/opt/uv-cache \
 
 # Installing pybool_ir from repo
 RUN --mount=type=cache,target=/opt/uv-cache \
-    uv run -m pip install --retries 5 --timeout 2000 -e /pybool_ir
+    uv run -m pip install /pybool_ir
 
 # API dependencies
 RUN uv pip install --system "fastapi[standard]"
