@@ -22,7 +22,7 @@ RUN --mount=type=cache,target=/opt/uv-cache \
 RUN --mount=type=cache,target=/opt/uv-cache \
     uv run -m pip install /pybool_ir
 
-RUN cd pylucene/jcc \
+RUN cd /pylucene/jcc \
     && python setup.py build \
     && python setup.py install
 
