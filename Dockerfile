@@ -19,6 +19,7 @@ RUN --mount=type=cache,target=/opt/uv-cache \
     uv run -m pip install /pybool_ir/pylucene/dist/*.whl
 
 ENV JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64
+ENV JCC_JDK=${JAVA_HOME}
 
 # Installing pybool_ir from repo
 RUN --mount=type=cache,target=/opt/uv-cache \
