@@ -18,18 +18,14 @@ RUN --mount=type=cache,target=/opt/uv-cache \
 RUN --mount=type=cache,target=/opt/uv-cache \
     uv run -m pip install /pybool_ir/pylucene/dist/*.whl
 
-ENV JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64
-ENV JCC_JDK=${JAVA_HOME}
-
 # Installing pybool_ir from repo
 RUN --mount=type=cache,target=/opt/uv-cache \
     uv run -m pip install /pybool_ir
 
+RUN uv add jcc
+
 # API dependencies
 RUN uv pip install --system "fastapi[standard]"
-
-RUN conda install -c conda-forge ld_impl_linux-64
-RUN uv add "jcc"
 
 # ---------- App ----------
 COPY ./app /app
