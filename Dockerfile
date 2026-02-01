@@ -28,6 +28,7 @@ RUN --mount=type=cache,target=/opt/uv-cache \
 # API dependencies
 RUN uv pip install --system "fastapi[standard]"
 
+RUN conda install -c conda-forge ld_impl_linux-64
 RUN uv add "jcc"
 
 # ---------- App ----------
