@@ -27,7 +27,7 @@ ARG JCC_JDK=${JAVA_HOME}
 ARG JCC_ARGSEP=";"
 ARG JCC_LFLAGS="-L$JAVA_HOME/lib;-ljava;-L$JAVA_HOME/lib/server;-ljvm;-Wl,-rpath=$JAVA_HOME/lib:$JAVA_HOME/lib/server"
 ARG JCC="python -m jcc --wheel"
-RUN cd /pybool_ir/pylucene/jcc && uv run python setup.py install --prefix=/app
+RUN uv add /pybool_ir/pylucene/jcc
 
 # API dependencies
 RUN uv pip install --system "fastapi[standard]"
