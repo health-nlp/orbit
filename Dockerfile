@@ -30,7 +30,8 @@ RUN uv add /pybool_ir/pylucene/
 #     uv run -m pip install /pybool_ir
 
 # API dependencies
-RUN uv pip install --system "fastapi[standard]"
+#RUN uv pip install --system "fastapi[standard]"
+RUN uv add "fastapi[standard]"
 
 # ---------- App ----------
 COPY ./app /app
