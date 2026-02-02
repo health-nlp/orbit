@@ -6,9 +6,10 @@ services:
     container_name: openpm_data_builder
     environment:
       MODE: full
-      DOWNLOAD_TARGET: ${BASELINE_PATH:-baseline}
+      DOWNLOAD_TARGET: baseline
     volumes:
       - ${INDEX_PATH:-./index}:/app/index
+      - ${BASELINE_PATH:-./baseline}:/app/baseline
     restart: always
 
   api:
