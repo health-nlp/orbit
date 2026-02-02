@@ -25,7 +25,7 @@ ARG JCC_ARGSEP=";"
 ARG JCC_LFLAGS="-L$JAVA_HOME/lib;-ljava;-L$JAVA_HOME/lib/server;-ljvm;-Wl,-rpath=$JAVA_HOME/lib:$JAVA_HOME/lib/server"
 ARG JCC="python -m jcc --wheel"
 RUN uv add /pybool_ir/pylucene/jcc
-RUN uv add /pybool_ir/pylucene/
+RUN uv add /pybool_ir/
 # RUN --mount=type=cache,target=/opt/uv-cache \
 #     uv run -m pip install /pybool_ir
 
