@@ -5,31 +5,24 @@ services:
     image: openpm:latest
     container_name: openpm_data_builder
     environment:
-      MODE: api
+      MODE: full
       DOWNLOAD_TARGET: baseline
     volumes:
-      #- ./app:/app
       - ./index:/app/index
-    restart: "no"
+    restart: always
 
   api:
     platform: linux/amd64
-    # build: .
+    build: .
     image: openpm:latest
     container_name: openpm_api
     environment:
       MODE: api
-    # outcommented for api part: if not outcommented, every run would need previous data_builder part
-    #depends_on:
-    #  data_builder:
-    #    condition: service_completed_successfully
+    depends_on:
+      data_builder:
+        condition: service_completed_successfully
     ports:
       - "8333:8000"
     volumes:
-      #- ./app:/app
       - ./index:/app/index
-      # outcommented for testing -> may be removed in future, because mounting them is not needed
-      # - ./index:/app/index
-      # - ./main.py:/main.py  
-      # - ./searchresult.py:/app/searchresult.py
     restart: always
