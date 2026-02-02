@@ -29,7 +29,6 @@ RUN uv add /pybool_ir/pylucene/jcc
 RUN --mount=type=cache,target=/opt/uv-cache uv run -m pip install /pybool_ir
 
 # API dependencies
-#RUN uv pip install --system "fastapi[standard]"
 RUN uv add "fastapi[standard]"
 
 # ---------- App ----------
