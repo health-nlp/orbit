@@ -6,9 +6,9 @@ services:
     container_name: openpm_data_builder
     environment:
       MODE: full
-      DOWNLOAD_TARGET: baseline
+      DOWNLOAD_TARGET: ${BASELINE_PATH:-baseline}
     volumes:
-      - ./index:/app/index
+      - ${INDEX_PATH:-./index}:/app/index
     restart: always
 
   api:
@@ -22,7 +22,7 @@ services:
       data_builder:
         condition: service_completed_successfully
     ports:
-      - "8333:8000"
+      - "${OPENPM_PORT:-8333}:8000"
     volumes:
-      - ./index:/app/index
+      - ${INDEX_PATH:-./index}:/app/index
     restart: always
