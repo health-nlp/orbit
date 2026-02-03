@@ -35,10 +35,17 @@ def _idlist(query: str) -> Tuple[int, List[str]]:
     :rtype: Tuple[int, List[str]]
     """
     # Run the ad-hoc experiment using the index at LOCAL_INDEX_PATH
-    with AdHocExperiment(PubmedIndexer(index_path=LOCAL_INDEX_PATH), raw_query=query) as experiment:
-        results = experiment.run
-        total_count = len(results)
-        return (total_count, [str(res.doc_id) for res in results])
+    lock.acquire()
+    try:
+        with AdHocExperiment(PubmedIndexer(index_path=LOCAL_INDEX_PATH), raw_query=query) as experiment:
+            results = experiment.run
+            total_count = len(results)
+            return (total_count, [str(res.doc_id) for res in results])
+    except Exception as e:
+        raise e        
+    finally:
+        lock.release()
+
         
 def _esearch(query: str, retmode: str, retmax:int, retstart: int) -> sr.SearchResult:
     """
@@ -69,12 +76,12 @@ def _esearch(query: str, retmode: str, retmax:int, retstart: int) -> sr.SearchRe
 
     id_list = id_list[retstart:retstart+retmax]
 
-    return sr.ESearch(
-        format=retmode,
+    return sr.ESearchResult(
+        retmodegit=retmode,
         count=str(total_count),
         retmax=str(retmax),
         retstart=str(retstart),
-        id_list=id_list,
+        idlist=id_list,
         querytranslation=formatted_query,
         translationset={"from": query, "to": formatted_query}
     )    
@@ -85,31 +92,17 @@ def _esearch(query: str, retmode: str, retmax:int, retstart: int) -> sr.SearchRe
 """
 @app.get("/esearch")
 async def esearch(
-    term: str = Query(default=..., description="Search term using boolean queries"),
+    term: str = Query(default=None, description="Search term using boolean queries"),
     retstart: int = Query(default="0", description="the start index for UIDs (default=0)"),
     retmax: int = Query(default="20", description="the end index for UIDs (default=20)"), 
     retmode: str = Query(default="xml", description="Return format xml or json (default=xml)"),
-    field: str = Query(default=None, description="Limitation to certain Entrez fields")
+    field: str = Query(default=None, description="Limitation to certain Entrez fields"),
+    db: str = Query(default="pubmed", description="Database to search")
 ):
 
-    lock.acquire()
-    try:
-        result = _esearch(term, retmode, retmax, retstart)
-
-        if retmode.lower() == "xml":
-            return Response(content=result.to_xml(), media_type="application/xml")
-        elif retmode.lower() == "json":
-            return Response(content=result.to_json(), media_type="application/json") 
-        else: 
-            return Response(content=result.to_json(), media_type="application/json")
-    
-    except Exception as e:
-        raise e
-        return sr.SearchResult(format="json", error=e).to_json()
-    finally: 
-        lock.release()
-
-
+    if term is None:
+        return sr.SearchResult(error="Empty term and query_key - nothing todo", retmode=retmode)
+    return _esearch(term, retmode, retmax, retstart)
 
 
 # Implementing EFetch endpoint
@@ -123,7 +116,6 @@ async def efetch(
     
     uid_list = [p.strip() for p in id.split(",") if p.strip()]
 
-    lock.acquire()
     try: 
         vm.attachCurrentThread()
         query = " OR ".join([f"id:'{uid}'" for uid in uid_list])

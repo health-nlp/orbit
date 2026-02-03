@@ -33,3 +33,8 @@ SearchResults.py
 
 
 pybool_ir/
+
+# These should only ever be comitted in rare cases.
+# The actual dependencies get updated when run in a devcontainer.
+pyproject.toml
+uv.lock

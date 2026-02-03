@@ -1,38 +1,57 @@
 import json
+from typing import Any
 import xml.etree.ElementTree as ET
+from fastapi import Response
 
-class SearchResult: 
-    def __init__(self, format: str, error: str = None):
-        self.format = format
+excluded = ["error", "querytranslation", "translationset", "media_type", "content", "status_code", "background", "body", "raw_headers", "retmode"]
+
+class SearchResult(Response): 
+    def __init__(self, retmode: str, error: str = None):
+        self.retmode = retmode
+        self.media_type = "application/json"
+        if retmode == "xml":
+            self.media_type = "application/xml"
         self.error = error
+        self.content = self.render(None)
+        super().__init__(None, 200, None, self.media_type, None)
 
     def to_json(self):
-        class_name = self.__class__.__name__.lower()
+        class_name = self.__class__.__name__.lower().replace("result","")
 
         data = {
             "header": self.get_header(class_name),
         }
 
         if self.error: 
-            data[f"{class_name}results"] = {"ERROR": str(self.error)}
+            data[f"{class_name}"] = {"ERROR": str(self.error)}
         else: 
-            excluded = ["format", "error", "querytranslation", "translationset"]
             result_content = {k: v for k, v in self.__dict__.items() if k not in excluded}
-            data[f"{class_name}result"] = result_content
+            data[f"{class_name}"] = result_content
 
-        return data
+        return json.dumps(data)
     
     def to_xml(self): 
-        class_name = self.__class__.__name__.lower()
+        substitutions = {
+            "count": "Count",
+            "retmax": "RetMax",
+            "retstart": "RetStart",
+            "idlist": "IdList",
+            "translationset": "TranslationSet",
+            "querytranslation": "QueryTranslation",
+
+            "esearchresult": "eSearchResult"
+        }
+        class_name = substitutions[self.__class__.__name__.lower()]
         
-        root = ET.Element(f"{class_name}Response")
+        root = ET.Element(f"{class_name}")
 
         if self.error: 
             err_tag = ET.SubElement(root, "ERROR")
             err_tag.text = str(self.error)
         else: 
             for key, value in self.__dict__.items():
-                if key not in ["format", "error", "querytranslation", "translationset"]: 
+                if key not in excluded: 
+                    key = substitutions[key]
                     child = ET.SubElement(root, key)
                     if isinstance(value, list):                         # handle list case
                         for item in value: 
@@ -47,6 +66,19 @@ class SearchResult:
 
         return ET.tostring(root, encoding="unicode")
     
+    def to_json_response(self):
+        return Response(self.to_json(), media_type="application/json")
+
+    def to_xml_response(self):
+        return Response(self.to_xml(), media_type="application/xml")
+
+    def render(self, content: Any) -> bytes:
+        if self.retmode == "xml":
+            return bytes(self.to_xml(), encoding="utf-8")
+        if self.retmode == "json":
+            return bytes(self.to_json(), encoding="utf-8")
+        return bytes(self.to_json(), encoding="utf-8")
+
     def get_header(self, search_type):
         return {
             "type": search_type,
@@ -56,23 +88,23 @@ class SearchResult:
 
 
 # Classes for each search-type
-class ESearch(SearchResult): 
-    def __init__(self, format: str,
+class ESearchResult(SearchResult): 
+    def __init__(self, retmode: str,
                  count: str, 
                  retmax: str,
                  retstart: str,
-                 id_list: str,
+                 idlist: str,
                  querytranslation: str,
                  translationset: str = None,
                  error = None):
-        super().__init__(format, error)
-        
         self.count = count
         self.retmax = retmax
         self.retstart = retstart
-        self.id_list = id_list
+        self.idlist = idlist
         self.querytranslation = querytranslation
         self.translationset = translationset
+        super().__init__(retmode, error)
+
 
 class EFetch(SearchResult):
     def __init__(self, format: str, 
