@@ -10,9 +10,6 @@ WORKDIR /app
 RUN pip install --retries=10 --default-timeout=500 uv
 
 COPY pyproject.toml uv.lock ./
-# Base dependencies
-RUN --mount=type=cache,target=/opt/uv-cache \
-    uv sync
 
 # PyLucene
 RUN --mount=type=cache,target=/opt/uv-cache \
@@ -30,6 +27,10 @@ RUN --mount=type=cache,target=/opt/uv-cache uv run -m pip install /pybool_ir
 
 # API dependencies
 RUN uv add "fastapi[standard]"
+
+# Base dependencies
+RUN --mount=type=cache,target=/opt/uv-cache \
+    uv sync
 
 # ---------- App ----------
 COPY ./app /app
