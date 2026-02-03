@@ -6,7 +6,7 @@ echo "DOWNLOAD TARGET: $DOWNLOAD_TARGET"
 
 if [ -d index ] && [ "$(ls -A index)" ]; then
   echo ">>> Index exists, skipping everything"
-  exit 0
+  exit 1
 fi
 
 # ensure, directory exists
