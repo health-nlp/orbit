@@ -4,8 +4,8 @@ echo "----------------------------------------"
 echo "MODE: $RUN_MODE"
 echo "DOWNLOAD TARGET: $DOWNLOAD_TARGET"
 
-if [ -d index ] && [ "$(ls -A index ]; then
-  echo ">>> Index exists, skipping indexing"
+if [ -d index ] && [ "$(ls -A index)" ]; then
+  echo ">>> Index exists, skipping everything"
 else
   exit 0
 fi
@@ -54,11 +54,7 @@ else
   uv run -m pybool_ir.cli pubmed process -b "$DOWNLOAD_TARGET" -o pubmed-processed.jsonl
 fi
 
-if [ -d index ] && [ "$(ls -A index ]; then
-  echo ">>> Index exists, skipping indexing"
-else
-  # Index the processed PubMed data.
-  echo ">>> Creating Index..."
-  uv run -m pybool_ir.cli pubmed index -b pubmed-processed.jsonl -s 1 -i index
-  echo "DONE!"
-fi
+# Index the processed PubMed data.
+echo ">>> Creating Index..."
+uv run -m pybool_ir.cli pubmed index -b pubmed-processed.jsonl -s 1 -i index
+echo "DONE!"
