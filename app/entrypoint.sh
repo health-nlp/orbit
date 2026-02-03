@@ -15,7 +15,8 @@ elif [ "$MODE" = "api" ]; then
     echo "Starting API"
     ls -alh
     pwd
-    exec uv run -m fastapi dev main.py --host 0.0.0.0 --port 8333
+    cat main.py
+    uv run -m fastapi dev main.py --host 0.0.0.0 --port 8333
 
 else 
     echo "UNKNOWN MODE=$MODE"
