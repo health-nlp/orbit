@@ -6,7 +6,7 @@ echo "DOWNLOAD TARGET: $DOWNLOAD_TARGET"
 
 if [ -d index ] && [ "$(ls -A index)" ]; then
   echo ">>> Index exists, skipping everything"
-  exit 1
+  exit 0
 fi
 
 # ensure, directory exists
@@ -57,3 +57,4 @@ fi
 echo ">>> Creating Index..."
 uv run -m pybool_ir.cli pubmed index -b pubmed-processed.jsonl -s 1 -i index
 echo "DONE!"
+exit 0

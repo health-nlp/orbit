@@ -10,7 +10,7 @@ services:
     volumes:
       - ${INDEX_PATH:-./index}:/app/index
       - ${BASELINE_PATH:-./baseline}:/app/baseline
-    restart: always
+    restart: on-failure
 
   api:
     platform: linux/amd64
