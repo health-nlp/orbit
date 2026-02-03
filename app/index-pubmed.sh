@@ -6,7 +6,6 @@ echo "DOWNLOAD TARGET: $DOWNLOAD_TARGET"
 
 if [ -d index ] && [ "$(ls -A index)" ]; then
   echo ">>> Index exists, skipping everything"
-else
   exit 0
 fi
 
