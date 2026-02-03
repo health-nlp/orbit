@@ -1,7 +1,7 @@
 import json
 import xml.etree.ElementTree as ET
 
-class searchresult: 
+class SearchResult: 
     def __init__(self, format: str, error: str = None):
         self.format = format
         self.error = error
@@ -11,8 +11,6 @@ class searchresult:
 
         data = {
             "header": self.get_header(class_name),
-            "translationset": self.translationset,
-            "querytranslation": self.querytranslation
         }
 
         if self.error: 
@@ -58,7 +56,7 @@ class searchresult:
 
 
 # Classes for each search-type
-class ESearch(searchresult): 
+class ESearch(SearchResult): 
     def __init__(self, format: str,
                  count: str, 
                  retmax: str,
@@ -76,7 +74,7 @@ class ESearch(searchresult):
         self.querytranslation = querytranslation
         self.translationset = translationset
 
-class EFetch(searchresult):
+class EFetch(SearchResult):
     def __init__(self, format: str, 
                  retmode: str,
                  article_dicts: list,
@@ -86,7 +84,7 @@ class EFetch(searchresult):
         self.retmode = retmode
         self.article_dicts = article_dicts
 
-class ESummary(searchresult): 
+class ESummary(SearchResult): 
     def __init__(self, format: str,
                  retstart: str,
                  retmax: str, 

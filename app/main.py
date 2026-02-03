@@ -1,10 +1,11 @@
+from functools import lru_cache
 from fastapi import FastAPI, HTTPException, Query, Response
 
 from pybool_ir.experiments.retrieval import AdHocExperiment
 from pybool_ir.index.pubmed import PubmedIndexer
 from pybool_ir.query.pubmed.parser import PubmedQueryParser
 from pybool_ir.index.pubmed import PubmedArticle
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Tuple
 
 import searchresult as sr
 
@@ -23,6 +24,61 @@ lock = threading.Lock()
 parser = PubmedQueryParser()
 
 
+@lru_cache(maxsize=64)
+def _idlist(query: str) -> Tuple[int, List[str]]:
+    """
+    Grab the id list for a query, caching the result so that it may be paged.
+    
+    :param query: Description
+    :type query: str
+    :return: Description
+    :rtype: Tuple[int, List[str]]
+    """
+    # Run the ad-hoc experiment using the index at LOCAL_INDEX_PATH
+    with AdHocExperiment(PubmedIndexer(index_path=LOCAL_INDEX_PATH), raw_query=query) as experiment:
+        results = experiment.run
+        total_count = len(results)
+        return (total_count, [str(res.doc_id) for res in results])
+        
+def _esearch(query: str, retmode: str, retmax:int, retstart: int) -> sr.SearchResult:
+    """
+    Docstring for _esearch
+    
+    :param query: Description
+    :type query: str
+    :param retmode: Description
+    :type retmode: str
+    :param retmax: Description
+    :type retmax: int
+    :param retstart: Description
+    :type retstart: int
+    :return: Description
+    :rtype: SearchResult
+    """
+    vm.attachCurrentThread()
+    # Parse and prepare query (will raise on malformed query)
+    ast = parser.parse_ast(query)
+    parser.parse_lucene(query)
+    formatted_query = parser.format(ast)
+
+    total_count, id_list = _idlist(formatted_query)
+    if retmax > total_count:
+        retmax = total_count-1
+    if retstart > total_count or retstart+retmax > total_count:
+        retstart = retmax
+
+    id_list = id_list[retstart:retstart+retmax]
+
+    return sr.ESearch(
+        format=retmode,
+        count=str(total_count),
+        retmax=str(retmax),
+        retstart=str(retstart),
+        id_list=id_list,
+        querytranslation=formatted_query,
+        translationset={"from": query, "to": formatted_query}
+    )    
+
 """
     ESearch-like endpoint.
     Example: GET /esearch?term=cancer+AND+therapy
@@ -30,64 +86,26 @@ parser = PubmedQueryParser()
 @app.get("/esearch")
 async def esearch(
     term: str = Query(default=..., description="Search term using boolean queries"),
-    retstart: str = Query(default="0", description="the start index for UIDs (default=0)"),
-    retmax: str = Query(default="20", description="the end index for UIDs (default=20)"), 
+    retstart: int = Query(default="0", description="the start index for UIDs (default=0)"),
+    retmax: int = Query(default="20", description="the end index for UIDs (default=20)"), 
     retmode: str = Query(default="xml", description="Return format xml or json (default=xml)"),
     field: str = Query(default=None, description="Limitation to certain Entrez fields")
 ):
-    
-    # filtering for fields
-    effective_query = term
-
-    if field: 
-        words = term.split()
-        operators = {"AND", "OR", "NOT", "AND NOT"}
-
-        processed_terms = [f"{word}[{field}]" if word.upper() in operators and "[" not in words else word for word in words]
-        effective_query = " ".join(processed_terms)
 
     lock.acquire()
     try:
-        vm.attachCurrentThread()
+        result = _esearch(term, retmode, retmax, retstart)
 
-        # Parse and prepare query (will raise on malformed query)
-        ast = parser.parse_ast(effective_query)
-        parser.parse_lucene(effective_query)
-        formatted_query = parser.format(ast)
-        print("Formatted query:", formatted_query)
-    
-
-        # Run the ad-hoc experiment using the index at LOCAL_INDEX_PATH
-        with AdHocExperiment(PubmedIndexer(index_path=LOCAL_INDEX_PATH), raw_query=formatted_query) as experiment:
-            results = experiment.run()
-
-            total_count = len(results)
-            paginated_results = results[retstart : retstart+retmax]
-            id_list = [str(res.doc_id) for res in paginated_results]
-
-            result_obj = sr.ESearch(
-                format=retmode,
-                count=str(total_count),
-                retmax=str(retmax),
-                retstart=str(retstart),
-                id_list=id_list,
-                querytranslation=formatted_query,
-                translationset={"from": term, "to": formatted_query}
-            )
-
-            if retmode.lower() == "xml":
-                return Response(content=result_obj.to_xml(), media_type="application/xml")
-            elif retmode.lower() == "json":
-                return Response(content=result_obj.to_json(), media_type="application/json") 
-            else: 
-                return Response(content=result_obj.to_json(), media_tpye="application/json")
-    
+        if retmode.lower() == "xml":
+            return Response(content=result.to_xml(), media_type="application/xml")
+        elif retmode.lower() == "json":
+            return Response(content=result.to_json(), media_type="application/json") 
+        else: 
+            return Response(content=result.to_json(), media_type="application/json")
     
     except Exception as e:
-        lock.release()
-
-        result_obj = sr.ESearch(error=e)
-        return Response(content=result_obj, media_type="application/json")
+        raise e
+        return sr.SearchResult(format="json", error=e).to_json()
     finally: 
         lock.release()
 
@@ -129,7 +147,6 @@ async def efetch(
                 "error": None
             }
     except Exception as e: 
-        lock.release()
         return {
             "header": {
                 "type": "efetch",
