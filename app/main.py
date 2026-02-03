@@ -77,7 +77,7 @@ def _esearch(query: str, retmode: str, retmax:int, retstart: int) -> sr.SearchRe
     id_list = id_list[retstart:retstart+retmax]
 
     return sr.ESearchResult(
-        retmodegit=retmode,
+        retmode=retmode,
         count=str(total_count),
         retmax=str(retmax),
         retstart=str(retstart),
