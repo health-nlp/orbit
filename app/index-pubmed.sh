@@ -4,10 +4,14 @@ echo "----------------------------------------"
 echo "MODE: $RUN_MODE"
 echo "DOWNLOAD TARGET: $DOWNLOAD_TARGET"
 
+if [ -d index ] && [ "$(ls -A index ]; then
+  echo ">>> Index exists, skipping indexing"
+else
+  exit 0
+fi
 
 # ensure, directory exists
 mkdir -p "$DOWNLOAD_TARGET"
-
 
 download_if_missing() {
 
