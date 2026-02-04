@@ -9,7 +9,7 @@ WORKDIR /app
 # ---------- Dependencies ----------
 RUN pip install --retries=10 --default-timeout=500 uv
 
-COPY pyproject.toml uv.lock ./
+COPY pyproject.toml ./
 # Base dependencies
 RUN --mount=type=cache,target=/opt/uv-cache \
     uv sync
