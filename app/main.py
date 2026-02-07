@@ -25,16 +25,13 @@ vm = lucene.getVMEnv()
 lock = threading.Lock()
 parser = PubmedQueryParser()
 
+# Test index folder content
 @app.get("/test")
 async def test_index(): 
     folder = pathlib.Path(LOCAL_INDEX_PATH)
-
-    # files = [f.name for f in folder.iterdir() if f.is_file()]
-    files = [p.relative_to(folder).as_posix()          # relative Pfad (keine ./)
-             for p in folder.rglob("*")                # rglob rekursiv
-             if p.is_file()]
-
+    files = [p.relative_to(folder).as_posix() for p in folder.rglob("*") if p.is_file()]
     print(files)
+
 
 """
     Grab the id list for a query, caching the result so that it may be paged.
