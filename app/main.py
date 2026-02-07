@@ -5,6 +5,7 @@ from pybool_ir.experiments.retrieval import AdHocExperiment
 from pybool_ir.index.pubmed import PubmedIndexer
 from pybool_ir.query.pubmed.parser import PubmedQueryParser
 from pybool_ir.index.pubmed import PubmedArticle
+from pybool_ir.query.ast import AtomNode, OperatorNode
 from typing import List, Dict, Any, Tuple
 
 import searchresult as sr
@@ -12,21 +13,30 @@ import searchresult as sr
 import threading
 import lucene
 import os
+import pathlib
 
 # LOCAL_INDEX_PATH now can be controlled via environment variable.
 # Default for normal runs (in docker) is /app/index.
 # For CI/Test we will set LOCAL_INDEX_PATH via the workflow/environment to the test index folder.
-LOCAL_INDEX_PATH = os.getenv("LOCAL_INDEX_PATH", "/app/index")
+LOCAL_INDEX_PATH = os.getenv("LOCAL_INDEX_PATH", "index")
 
 app = FastAPI()
 vm = lucene.getVMEnv()
 lock = threading.Lock()
 parser = PubmedQueryParser()
 
+@app.get("/test")
+async def test_index(): 
+    folder = pathlib.Path(LOCAL_INDEX_PATH)
 
-@lru_cache(maxsize=64)
-def _idlist(query: str) -> Tuple[int, List[str]]:
-    """
+    # files = [f.name for f in folder.iterdir() if f.is_file()]
+    files = [p.relative_to(folder).as_posix()          # relative Pfad (keine ./)
+             for p in folder.rglob("*")                # rglob rekursiv
+             if p.is_file()]
+
+    print(files)
+
+"""
     Grab the id list for a query, caching the result so that it may be paged.
     
     :param query: Description
@@ -34,6 +44,10 @@ def _idlist(query: str) -> Tuple[int, List[str]]:
     :return: Description
     :rtype: Tuple[int, List[str]]
     """
+@lru_cache(maxsize=64)
+def _idlist(query: str) -> Tuple[int, List[str]]:
+    print(f"DEBUG: start search for Lucene query: {query}")
+    
     # Run the ad-hoc experiment using the index at LOCAL_INDEX_PATH
     lock.acquire()
     try:
@@ -42,12 +56,25 @@ def _idlist(query: str) -> Tuple[int, List[str]]:
             total_count = len(results)
             return (total_count, [str(res.doc_id) for res in results])
     except Exception as e:
-        raise e        
+        print(f"DEBUG Fehler: {e}")
+        raise e
     finally:
         lock.release()
 
-        
-def _esearch(query: str, retmode: str, retmax:int, retstart: int) -> sr.SearchResult:
+# Helper methods for esearch      
+def set_field_recursively(node, new_field):
+    # Atom (= echtes Term-Leaf)
+    if hasattr(node, "field"):
+        node.field = new_field
+
+    # rekursiv über Kinder (Operatoren etc.)
+    if hasattr(node, "children"):
+        for child in node.children:
+            set_field_recursively(child, new_field)
+
+
+def _esearch(query: str, retmode: str, retmax:int, retstart: int, field: str) -> sr.SearchResult:
+    print(f"Running esearch for query: {query}")
     """
     Docstring for _esearch
     
@@ -62,19 +89,29 @@ def _esearch(query: str, retmode: str, retmax:int, retstart: int) -> sr.SearchRe
     :return: Description
     :rtype: SearchResult
     """
-    vm.attachCurrentThread()
-    # Parse and prepare query (will raise on malformed query)
-    ast = parser.parse_ast(query)
-    parser.parse_lucene(query)
-    formatted_query = parser.format(ast)
+    if not vm.isCurrentThreadAttached():
+        vm.attachCurrentThread()
 
+    # Parse and prepare query (will raise on malformed query)
+    esearchParser = PubmedQueryParser(optional_fields=[field] if field else None)
+    ast = esearchParser.parse_ast(query)
+
+    if field:
+        set_field_recursively(ast, field)
+
+    formatted_query = esearchParser.format(ast)
+
+
+    # retrieve the amount of ids constraint by retstart and retmax indices
     total_count, id_list = _idlist(formatted_query)
     if retmax > total_count:
         retmax = total_count-1
     if retstart > total_count or retstart+retmax > total_count:
         retstart = retmax
 
+    print("before idlist")
     id_list = id_list[retstart:retstart+retmax]
+    print("after idlist")
 
     return sr.ESearchResult(
         retmode=retmode,
@@ -84,7 +121,8 @@ def _esearch(query: str, retmode: str, retmax:int, retstart: int) -> sr.SearchRe
         idlist=id_list,
         querytranslation=formatted_query,
         translationset={"from": query, "to": formatted_query}
-    )    
+    )
+
 
 """
     ESearch-like endpoint.
@@ -96,19 +134,25 @@ async def esearch(
     retstart: int = Query(default="0", description="the start index for UIDs (default=0)"),
     retmax: int = Query(default="20", description="the end index for UIDs (default=20)"), 
     retmode: str = Query(default="xml", description="Return format xml or json (default=xml)"),
-    field: str = Query(default=None, description="Limitation to certain Entrez fields"),
+    field: str = Query(default=None, description="Limitation to certain Entrez fields"),    # currently not used
     db: str = Query(default="pubmed", description="Database to search")
 ):
 
     if term is None:
         return sr.SearchResult(error="Empty term and query_key - nothing todo", retmode=retmode)
-    return _esearch(term, retmode, retmax, retstart)
 
+    return _esearch(term, retmode, retmax, retstart, field)
+
+
+
+# --------------
+# --- EFETCH ---
+# --------------
 
 # Implementing EFetch endpoint
 # TODO finish implementation, by adding more options according to PubMed Documentation  
 # TODO adjust return structure to use searchresult classes 
-@app.get("efetch")
+@app.get("/efetch")
 async def efetch(
     id: str = Query(default=..., description="Comma seperated list of UIDs (e.g. '12345678', '90123456')"),
     retmode: str = Query(default="json", description="Return format (json is default)")
