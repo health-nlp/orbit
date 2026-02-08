@@ -152,43 +152,29 @@ async def esearch(
 @app.get("/efetch")
 async def efetch(
     id: str = Query(default=..., description="Comma seperated list of UIDs (e.g. '12345678', '90123456')"),
-    retmode: str = Query(default="json", description="Return format (json is default)")
+    retmode: str = Query(default="json", description="Return format (json is default)"),
+    retstart: int = Query(default=None, description="optional start-index of given id-list"),
+    retmax: int = Query(default=None, descrition="optional start-index of given id-list")
 ):
     
     uid_list = [p.strip() for p in id.split(",") if p.strip()]
+    
+    start = max(retstart, 0)
+    end = start + retmax
+    uid_list = uid_list[start:end]
 
+    lock.acquire()
     try: 
         vm.attachCurrentThread()
-        query = " OR ".join([f"id:'{uid}'" for uid in uid_list])
-        ast = parser.parse_ast(query)
-        parser.parse_lucene(query)
-        lucene_query = parser.format(ast)
-        print(f"lucene_query: {lucene_query}")
-    
+        query = " OR ".join([f"id:{uid}" for uid in uid_list])
 
-        with AdHocExperiment(PubmedIndexer(index_path=LOCAL_INDEX_PATH, store_field=True)) as experiment:
-            articles: List[PubmedArticle] = experiment.indexer.search(query=lucene_query, n_hits=len(uid_list))
+        with AdHocExperiment(PubmedIndexer(index_path=LOCAL_INDEX_PATH, store_fields=True)) as experiment:
+            articles: List[PubmedArticle] = experiment.indexer.search(query=query, n_hits=len(uid_list))
             article_dicts = [article.to_dict() for article in articles]
 
-            return {
-                "header": {
-                    "type": "efetch",
-                    "version": "0.3-openpm",
-                    "retmode": retmode
-                },
-                "articleList": article_dicts,
-                "error": None
-            }
-    except Exception as e: 
-        return {
-            "header": {
-                "type": "efetch",
-                "verison": "0.3-openpm"
-            },
-            "efetchresult": {
-                "ERROR": str(e),
-            }
-        }
+            return sr.EFetch(retmode=retmode, article_dicts=article_dicts)
 
+    except Exception as e: 
+        return sr.EFetch(error=str(e))
     finally: 
         lock.release()

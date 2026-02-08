@@ -107,24 +107,23 @@ class ESearchResult(SearchResult):
 
 
 class EFetch(SearchResult):
-    def __init__(self, format: str, 
+    def __init__(self, 
                  retmode: str,
                  article_dicts: list,
                  error = None):
-        super().__init__(format, error)
-
         self.retmode = retmode
         self.article_dicts = article_dicts
+        super().__init__(retmode, error)
 
 class ESummary(SearchResult): 
-    def __init__(self, format: str,
+    def __init__(self, 
                  retstart: str,
                  retmax: str, 
                  retmode: str,  
                  error = None):
-        super().__init__(format, error)
-
         self.retstart = retstart
         self.retmax = retmax
         self.retmode = retmode
+        super().__init__(format, error)
+
         
