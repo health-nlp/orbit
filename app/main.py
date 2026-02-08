@@ -172,9 +172,9 @@ async def efetch(
             articles: List[PubmedArticle] = experiment.indexer.search(query=query, n_hits=len(uid_list))
             article_dicts = [article.to_dict() for article in articles]
 
-            return sr.EFetch(retmode=retmode, article_dicts=article_dicts)
+            return sr.EFetchResult(retmode=retmode, article_dicts=article_dicts)
 
     except Exception as e: 
-        return sr.EFetch(error=str(e))
+        return sr.SearchResult(error=str(e), retmode=retmode)
     finally: 
         lock.release()
