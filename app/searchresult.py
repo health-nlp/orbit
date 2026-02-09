@@ -15,12 +15,12 @@ class SearchResult(Response):
         self.content = self.render(None)
         super().__init__(None, 200, None, self.media_type, None)
 
+
+
     def to_json(self):
         class_name = self.__class__.__name__.lower().replace("result","")
 
-        data = {
-            "header": self.get_header(class_name),
-        }
+        data = {"header": self.get_header(class_name)}
 
         if self.error: 
             data[f"{class_name}"] = {"ERROR": str(self.error)}
@@ -30,6 +30,8 @@ class SearchResult(Response):
 
         return json.dumps(data)
     
+
+
     def to_xml(self): 
         substitutions = {
             "count": "Count",
@@ -38,33 +40,43 @@ class SearchResult(Response):
             "idlist": "IdList",
             "translationset": "TranslationSet",
             "querytranslation": "QueryTranslation",
-
-            "esearchresult": "eSearchResult"
+            "efetchresult": "eFetchResult",
+            "esummaryresult": "eSummaryResult",
+            "esearchresult": "eSearchResult",
+            "searchresult": "SearchResult",
+            "summaries": "DocSum"
         }
-        class_name = substitutions[self.__class__.__name__.lower()]
-        
-        root = ET.Element(f"{class_name}")
+
+        class_name = substitutions.get(self.__class__.__name__.lower(), self.__class__.__name__)
+        root = ET.Element(class_name)
 
         if self.error: 
             err_tag = ET.SubElement(root, "ERROR")
             err_tag.text = str(self.error)
         else: 
             for key, value in self.__dict__.items():
-                if key not in excluded: 
-                    key = substitutions[key]
-                    child = ET.SubElement(root, key)
-                    if isinstance(value, list):                         # handle list case
-                        for item in value: 
-                            item_child = ET.SubElement(child, "Id")
-                            item_child.text = str(item)
-                    elif isinstance(value, dict):                       # handle dictionary case
-                        for k, v in value.items(): 
-                            sub = ET.SubElement(child, k)
-                            sub.text = str(v)
-                    else:                                               # handle text string case
-                        child.text = str(value)
+                if key in excluded:
+                    continue 
 
+                xml_key = substitutions.get(key, key)
+                child = ET.SubElement(root, key)
+                self._append_value_to_xml(child, value)
+        
         return ET.tostring(root, encoding="unicode")
+
+    # recursive helper function for clustered dict/lists
+    def _append_value_to_xml(self, parent, value): 
+        if isinstance(value, dict):                         # handle list case
+            for k, v in value.items():
+                sub = ET.SubElement(parent, k)
+                self._append_value_to_xml(sub, v)
+        elif isinstance(value, list):
+            for item in value: 
+                item_tag = ET.SubElement(parent, "Article")
+                self._append_value_to_xml(item_tag, item)
+        else: 
+            parent.text = str(value)
+
     
     def to_json_response(self):
         return Response(self.to_json(), media_type="application/json")
@@ -106,25 +118,25 @@ class ESearchResult(SearchResult):
         super().__init__(retmode, error)
 
 
-class EFetch(SearchResult):
-    def __init__(self, format: str, 
+class EFetchResult(SearchResult):
+    def __init__(self, 
                  retmode: str,
                  article_dicts: list,
                  error = None):
-        super().__init__(format, error)
-
         self.retmode = retmode
         self.article_dicts = article_dicts
+        super().__init__(retmode, error)
 
-class ESummary(SearchResult): 
-    def __init__(self, format: str,
+
+class ESummaryResult(SearchResult): 
+    def __init__(self, 
                  retstart: str,
                  retmax: str, 
                  retmode: str,  
+                 summaries: list,
                  error = None):
-        super().__init__(format, error)
-
         self.retstart = retstart
         self.retmax = retmax
         self.retmode = retmode
-        
+        self.summaries = summaries
+        super().__init__(format, error)
