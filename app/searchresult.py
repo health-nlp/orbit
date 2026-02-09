@@ -43,7 +43,8 @@ class SearchResult(Response):
             "efetchresult": "eFetchResult",
             "esummaryresult": "eSummaryResult",
             "esearchresult": "eSearchResult",
-            "searchresult": "SearchResult"
+            "searchresult": "SearchResult",
+            "summaries": "DocSum"
         }
 
         class_name = substitutions.get(self.__class__.__name__.lower(), self.__class__.__name__)
@@ -126,15 +127,16 @@ class EFetchResult(SearchResult):
         self.article_dicts = article_dicts
         super().__init__(retmode, error)
 
+
 class ESummaryResult(SearchResult): 
     def __init__(self, 
                  retstart: str,
                  retmax: str, 
                  retmode: str,  
+                 summaries: list,
                  error = None):
         self.retstart = retstart
         self.retmax = retmax
         self.retmode = retmode
+        self.summaries = summaries
         super().__init__(format, error)
-
-        

@@ -178,3 +178,59 @@ async def efetch(
         return sr.SearchResult(error=str(e), retmode=retmode)
     finally: 
         lock.release()
+
+
+
+# ----------------
+# --- ESUMMARY ---
+# ----------------
+@app.get("/esummary")
+async def esummary(
+    id: str = Query(default=..., description="Comma seperated list of UIDs"),
+    retmode: str = Query(default="json", description="return format: xml/json"),
+    retstart: int = Query(default=0, description="the start index (default=0)"), 
+    retmax: int = Query(default=20, description="the end index (default=20)")
+):
+
+    uid_list = [p.strip() for p in id.split(",") if p.strip()]
+
+    start = max(retstart, 0)
+    end = start + retmax
+    uid_list = uid_list[start:end]
+
+    lock.acquire()
+    try: 
+        vm.attachCurrentThread()
+        query = " OR ".join([f"id:{uid}" for uid in uid_list])
+
+        with AdHocExperiment(PubmedIndexer(index_path=LOCAL_INDEX_PATH, store_fields=True)) as experiment: 
+            articles: List[PubmedArticle] = experiment.indexer.search(query=query, n_hits=len(uid_list))
+
+            summaries = [to_summary(a) for a in articles]
+
+            return sr.ESummaryResult(
+                retstart=retstart,
+                retmax=retmax,
+                retmode=retmode,
+                summaries=summaries
+            )
+
+    except Exception as e: 
+        return sr.SearchResult(retmode=retmode, error=str(e))
+
+    finally: 
+        lock.release()
+
+# ESummary Helper
+def to_summary(article: PubmedArticle) -> dict: 
+    d = article.to_dict()
+
+    print(str(d))
+
+    return {
+        "uid": d.get("id"),
+        "title": d.get("title"),
+        "journal": d.get("journal"),
+        "pubdate": d.get("pubdate"),
+        "authors": [a.get("names") for a in d.get("authors", [])][:5]
+    }
