@@ -10,6 +10,7 @@ COPY pyproject.toml ./
 
 # ---------- Dependencies ----------
 RUN pip install --retries=10 --default-timeout=500 uv
+RUN uv run python -m ensurepip
 
 # PyLucene
 RUN --mount=type=cache,target=/opt/uv-cache \

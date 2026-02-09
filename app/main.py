@@ -24,8 +24,7 @@ lock = threading.Lock()
 parser = PubmedQueryParser()
 
 
-@lru_cache(maxsize=64)
-def _idlist(query: str) -> Tuple[int, List[str]]:
+def _idlist(query: str, retstart: int, retmax: int) -> Tuple[int, List[str]]:
     """
     Grab the id list for a query, caching the result so that it may be paged.
     
@@ -37,10 +36,12 @@ def _idlist(query: str) -> Tuple[int, List[str]]:
     # Run the ad-hoc experiment using the index at LOCAL_INDEX_PATH
     lock.acquire()
     try:
-        with AdHocExperiment(PubmedIndexer(index_path=LOCAL_INDEX_PATH), raw_query=query) as experiment:
-            results = experiment.run
-            total_count = len(results)
-            return (total_count, [str(res.doc_id) for res in results])
+        vm.attachCurrentThread()
+        with AdHocExperiment(PubmedIndexer(index_path=LOCAL_INDEX_PATH), raw_query="test",page_start=retstart, page_size=retmax) as ex:
+            results = ex.run
+            ids = [str(res.doc_id) for res in results]
+            total_count = next(ex.count())
+            return (total_count, ids)
     except Exception as e:
         raise e        
     finally:
@@ -62,19 +63,12 @@ def _esearch(query: str, retmode: str, retmax:int, retstart: int) -> sr.SearchRe
     :return: Description
     :rtype: SearchResult
     """
-    vm.attachCurrentThread()
     # Parse and prepare query (will raise on malformed query)
     ast = parser.parse_ast(query)
     parser.parse_lucene(query)
     formatted_query = parser.format(ast)
 
-    total_count, id_list = _idlist(formatted_query)
-    if retmax > total_count:
-        retmax = total_count-1
-    if retstart > total_count or retstart+retmax > total_count:
-        retstart = retmax
-
-    id_list = id_list[retstart:retstart+retmax]
+    total_count, id_list = _idlist(formatted_query, retstart, retmax)
 
     return sr.ESearchResult(
         retmode=retmode,
@@ -90,7 +84,7 @@ def _esearch(query: str, retmode: str, retmax:int, retstart: int) -> sr.SearchRe
     ESearch-like endpoint.
     Example: GET /esearch?term=cancer+AND+therapy
 """
-@app.get("/esearch")
+@app.get("/entrez/eutils/esearch.fcgi")
 async def esearch(
     term: str = Query(default=None, description="Search term using boolean queries"),
     retstart: int = Query(default="0", description="the start index for UIDs (default=0)"),
