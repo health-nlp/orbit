@@ -15,8 +15,14 @@ import lucene
 import os
 import pathlib
 
-
 class ESearch:
+    """
+    Implements the Pubmed-like ESearch endpoint
+    
+    Parses a boolean query, executes it against the Lucene index
+    and returns matching document IDs with paging support (retstart/retmax)
+    """
+
     LOCAL_INDEX_PATH = os.getenv("LOCAL_INDEX_PATH", "app/index")
     vm = lucene.getVMEnv()
     lock = threading.Lock()
@@ -28,52 +34,30 @@ class ESearch:
         self.retmax = retmax
         self.retmode = retmode
         self.field = field
+    
+    """
+    Initialization of an ESearch request.
 
-    # @lru_cache(maxsize=64)
-    def _idlist(self, query: str, retstart: int, retmax: int) -> Tuple[int, List[str]]:
-        # Run the ad-hoc experiment using the index at LOCAL_INDEX_PATH
-        self.lock.acquire()
-        try:
-            self.vm.attachCurrentThread()
-            with AdHocExperiment(PubmedIndexer(index_path=self.LOCAL_INDEX_PATH), raw_query="test",page_start=retstart, page_size=retmax) as ex:
-                results = ex.run
-                ids = [str(res.doc_id) for res in results]
-                total_count = next(ex.count())
-                return (total_count, ids)
-        except Exception as e:
-            print(f"DEBUG Fehler: {e}")
-            raise e
-        finally:
-            self.lock.release()
-
-    # Helper methods for esearch      
-    def set_field_recursively(node, new_field):
-        # Atom (= echtes Term-Leaf)
-        if hasattr(node, "field"):
-            node.field = new_field
-
-        # rekursiv über Kinder (Operatoren etc.)
-        if hasattr(node, "children"):
-            for child in node.children:
-                set_field_recursively(child, new_field)
-
+    :param term: Boolean query (e.g. "cancer AND therapy")
+    :param retstart: Start offset for paging
+    :param retmax: Maximum number of results to return
+    :param retmode: Output format ("json" or "xml")
+    :param field: Optional field restriction (e.g., ti, ab)
+    """
 
     def search(self) -> sr.SearchResult:
-        print(f"Running esearch for query: {self.term}")
         """
-        Docstring for _esearch
-        
-        :param query: Description
-        :type query: str
-        :param retmode: Description
-        :type retmode: str
-        :param retmax: Description
-        :type retmax: int
-        :param retstart: Description
-        :type retstart: int
-        :return: Description
-        :rtype: SearchResult
+        Runs the search against the index.
+
+        Steps: 
+        1. Parse query -> AST
+        2. Format Lucene query
+        3. Retrieve matching document IDs
+        4. Return ESearchResult
+
+        : return SearchResult containing IDs and metadata
         """
+
         if not self.vm.isCurrentThreadAttached():
             self.vm.attachCurrentThread()
 
@@ -93,3 +77,51 @@ class ESearch:
             querytranslation=formatted_query,
             translationset={"from": self.term, "to": formatted_query}
         )
+
+
+    
+    # -----------------------
+    # --- ESummary Helper ---
+    # -----------------------
+
+    # @lru_cache(maxsize=64)
+    def _idlist(self, query: str, retstart: int, retmax: int) -> Tuple[int, List[str]]:
+        """
+        Internal helper method: runs lucene query and returns list of matching IDs.
+
+        :param query: Formatted Lucene query
+        :param retstart: Paging start index
+        :param retmax: Paging size
+        
+        : return: (total_count, list_of_ids)
+        """
+
+        with self.lock:
+            try:
+                if not self.vm.isCurrentThreadAttached():
+                    self.vm.attachCurrentThread()
+
+                indexer = PubmedIndexer(index_path=self.LOCAL_INDEX_PATH)    
+                with AdHocExperiment(indexer, raw_query="test",page_start=retstart, page_size=retmax) as ex:
+                    results = ex.run
+                    ids = [str(res.doc_id) for res in results]
+                    total_count = next(ex.count())
+                    return (total_count, ids)
+            except Exception as e:
+                print(f"DEBUG Fehler: {e}")
+                raise e
+
+
+    def set_field_recursively(node, new_field):
+        """
+        Recursively assign a field to all AST atom nodes.
+        """
+        # Atom (= echtes Term-Leaf)
+        if hasattr(node, "field"):
+            node.field = new_field
+
+        # rekursiv über Kinder (Operatoren etc.)
+        if hasattr(node, "children"):
+            for child in node.children:
+                set_field_recursively(child, new_field)
+
