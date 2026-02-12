@@ -3,14 +3,12 @@ set -e
 
 echo "MODE=$MODE"
 
-if [ "$MODE" = "full" ]; then
-    echo "Running DATA BUILDER (in full mode)"
+if [ "$MODE" = "pubmed" ]; then
     exec sh index-pubmed.sh
-elif [ "$MODE" = "test" ]; then
-    echo "Running DATA BUILDER (in test mode)"
-    exec sh index-pubmed.sh --test
+elif [ "$MODE" = "ctgov" ]; then
+    uv run -m pybool_ir.cli ctgov download -b $ORBIT_CTGOV_BASELINE_PATH -s1
+    uv run -m pybool_ir.cli ctgov index -b $ORBIT_CTGOV_BASELINE_PATH -i $ORBIT_CTGOV_INDEX_PATH -s1
 elif [ "$MODE" = "api" ]; then
-    echo "Starting API"
     uv run -m fastapi dev main.py --host 0.0.0.0 --port 8333
 else 
     echo "UNKNOWN MODE=$MODE"

@@ -1,29 +1,43 @@
 services:
-  data_builder:
+  orbit_pubmed_data_builder:
     platform: linux/amd64
     build: .
-    image: openpm:latest
-    container_name: openpm_data_builder
+    image: orbit:latest
+    container_name: orbit_pubmed_data_builder
     environment:
-      MODE: full
-      DOWNLOAD_TARGET: baseline
+      MODE: pubmed
     volumes:
-      - ${INDEX_PATH:-./index}:/app/index
-      - ${BASELINE_PATH:-./baseline}:/app/baseline
+      - ${ORBIT_PUBMED_INDEX_PATH:-./index}:/app/index-pubmed
+      - ${ORBIT_PUBMED_BASELINE_PATH:-./baseline}:/app/baseline-pubmed
     restart: on-failure
 
-  api:
+  orbit_ctgov_data_builder:
     platform: linux/amd64
     build: .
-    image: openpm:latest
-    container_name: openpm_api
+    image: orbit:latest
+    container_name: orbit_ctgov_data_builder
+    environment:
+      MODE: ctgov
+    volumes:
+      - ${ORBIT_CTGOV_INDEX_PATH:-./index}:/app/index-ctgov
+      - ${ORBIT_CTGOV_BASELINE_PATH:-./baseline}:/app/baseline-ctgov
+    restart: on-failure
+
+  orbit_api:
+    platform: linux/amd64
+    build: .
+    image: orbit:latest
+    container_name: orbit_api
     environment:
       MODE: api
     depends_on:
-      data_builder:
+      orbit_pubmed_data_builder:
+        condition: service_completed_successfully
+      orbit_ctgov_data_builder:
         condition: service_completed_successfully
     ports:
-      - "${OPENPM_PORT:-8333}:8000"
+      - "${ORBIT_PORT:-8333}:8000"
     volumes:
-      - ${INDEX_PATH:-./index}:/app/index
+      - ${ORBIT_PUBMED_INDEX_PATH:-./index-pubmed}:/app/index-pubmed
+      - ${ORBIT_CTGOV_INDEX_PATH:-./index-ctgov}:/app/index-ctgov
     restart: always

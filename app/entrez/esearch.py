@@ -7,7 +7,7 @@ from pybool_ir.query.pubmed.parser import PubmedQueryParser
 from typing import List, Tuple
 
 from . import searchresult as sr
-from . import LOCAL_PUBMED_INDEX_PATH
+from . import ORBIT_PUBMED_INDEX_PATH
 from . import _lock
 
 class ESearch:
@@ -99,7 +99,7 @@ class ESearch:
                 if not self.vm.isCurrentThreadAttached():
                     self.vm.attachCurrentThread()
 
-                indexer = PubmedIndexer(index_path=LOCAL_PUBMED_INDEX_PATH)    
+                indexer = PubmedIndexer(index_path=ORBIT_PUBMED_INDEX_PATH)    
                 with AdHocExperiment(indexer, raw_query=query ,page_start=retstart, page_size=retmax) as ex:
                     results = ex.run
                     ids = [str(res.doc_id) for res in results]

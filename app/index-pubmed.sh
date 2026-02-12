@@ -1,5 +1,5 @@
-DOWNLOAD_TARGET=${DOWNLOAD_TARGET:-"baseline"}
-RUN_MODE=${MODE:-"full"}
+DOWNLOAD_TARGET=$ORBIT_PUBMED_BASELINE_PATH
+RUN_MODE="full"
 echo "----------------------------------------"
 echo "MODE: $RUN_MODE"
 echo "DOWNLOAD TARGET: $DOWNLOAD_TARGET"
@@ -55,6 +55,6 @@ fi
 
 # Index the processed PubMed data.
 echo ">>> Creating Index..."
-uv run -m pybool_ir.cli pubmed index -b pubmed-processed.jsonl -s 1 -i index
+uv run -m pybool_ir.cli pubmed index -b pubmed-processed.jsonl -s 1 -i $ORBIT_PUBMED_INDEX_PATH
 echo "DONE!"
 exit 0

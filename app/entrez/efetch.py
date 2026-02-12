@@ -12,7 +12,7 @@ from typing import List
 import xml.etree.ElementTree as ET
 
 from . import searchresult as sr
-from . import LOCAL_PUBMED_INDEX_PATH
+from . import ORBIT_PUBMED_INDEX_PATH
 from . import _lock
 
 
@@ -63,7 +63,7 @@ class EFetch:
                     self.vm.attachCurrentThread()
 
                 query, uid_list = self.process_input(self.id, self.retstart, self.retmax)
-                indexer = PubmedIndexer(index_path=LOCAL_PUBMED_INDEX_PATH, store_fields=True)
+                indexer = PubmedIndexer(index_path=ORBIT_PUBMED_INDEX_PATH, store_fields=True)
 
                 with AdHocExperiment(indexer, page_start=self.retstart, page_size=self.retmax) as ex:
                     docs = ex.indexer.search(query=query, n_hits=len(uid_list))

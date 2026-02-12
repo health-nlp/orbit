@@ -8,7 +8,7 @@ from pybool_ir.index.pubmed import PubmedArticle
 from typing import List
 
 from . import searchresult as sr
-from . import LOCAL_PUBMED_INDEX_PATH
+from . import ORBIT_PUBMED_INDEX_PATH
 from . import _lock
 
 class ESummary: 
@@ -58,7 +58,7 @@ class ESummary:
                     self.vm.attachCurrentThread()
 
                 query, uid_list = self.process_input(self.id, self.retstart, self.retmax)
-                indexer = PubmedIndexer(index_path=LOCAL_PUBMED_INDEX_PATH, store_fields=True)
+                indexer = PubmedIndexer(index_path=ORBIT_PUBMED_INDEX_PATH, store_fields=True)
 
                 with AdHocExperiment(indexer, page_start=self.retstart, page_size=self.retmax) as ex: 
                     articles: List[PubmedArticle] = experiment.indexer.search(query=query, n_hits=len(uid_list))
