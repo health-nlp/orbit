@@ -6,6 +6,8 @@ echo "MODE=$MODE"
 if [ "$MODE" = "pubmed" ]; then
     exec sh index-pubmed.sh
 elif [ "$MODE" = "ctgov" ]; then
+    echo baseline: $ORBIT_CTGOV_BASELINE_PATH
+    echo index: $ORBIT_CTGOV_INDEX_PATH
     uv run -m pybool_ir.cli ctgov download -b $ORBIT_CTGOV_BASELINE_PATH -s1
     uv run -m pybool_ir.cli ctgov index -b $ORBIT_CTGOV_BASELINE_PATH -i $ORBIT_CTGOV_INDEX_PATH -s1
 elif [ "$MODE" = "api" ]; then
