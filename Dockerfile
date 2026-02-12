@@ -28,7 +28,7 @@ ARG JCC_LFLAGS="-L$JAVA_HOME/lib;-ljava;-L$JAVA_HOME/lib/server;-ljvm;-Wl,-rpath
 ARG JCC="python -m jcc --wheel"
 RUN uv add /pybool_ir/pylucene/jcc
 
-RUN --mount=type=cache,target=/opt/uv-cache uv run -m pip install /pybool_ir
+RUN --mount=type=cache,target=/opt/uv-cache uv pip install /pybool_ir
 
 # API dependencies
 RUN uv add "fastapi[standard]"
