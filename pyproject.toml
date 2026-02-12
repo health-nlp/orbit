@@ -7,8 +7,4 @@ requires-python = "==3.13.*"
 dependencies = [
     "click>=8.2.1",
     "fastapi[standard]>=0.116.0",
-    "jcc",
 ]
-
-[tool.uv.sources]
-jcc = { path = "../../pybool_ir/pylucene/jcc" }
