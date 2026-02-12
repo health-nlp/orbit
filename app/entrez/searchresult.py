@@ -3,7 +3,7 @@ from typing import Any, List
 import xml.etree.ElementTree as ET
 from fastapi import Response
 
-excluded = ["error", "media_type", "content", "status_code", "background", "body", "raw_headers", "retmode", "trecqid", "trectag"]
+excluded = ["error", "media_type", "content", "status_code", "background", "body", "raw_headers", "retmode", "trecqid", "trectag", "translationset"]
 
 class SearchResult(Response): 
     def __init__(self, retmode: str, error: str = None):
