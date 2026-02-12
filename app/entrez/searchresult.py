@@ -73,7 +73,8 @@ class SearchResult(Response):
                 item_tag = ET.SubElement(parent, "Id")
                 self._append_value_to_xml(item_tag, item)
         else: 
-            parent.tag = parent.tag.capitalize()
+            if parent.tag == "from" or parent.tag == "to":
+                parent.tag = parent.tag.capitalize()
             parent.text = str(value)
 
     
