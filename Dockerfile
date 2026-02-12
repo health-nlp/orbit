@@ -8,8 +8,7 @@ WORKDIR /app
 
 # ---------- Dependencies ----------
 RUN pip install --retries=10 --default-timeout=500 uv
-
-RUN python -m ensurepip
+RUN python3 -m ensurepip
 RUN uv run python -m ensurepip
 
 COPY pyproject.toml ./
