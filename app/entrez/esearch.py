@@ -100,7 +100,7 @@ class ESearch:
                     self.vm.attachCurrentThread()
 
                 indexer = PubmedIndexer(index_path=LOCAL_PUBMED_INDEX_PATH)    
-                with AdHocExperiment(indexer, raw_query="test",page_start=retstart, page_size=retmax) as ex:
+                with AdHocExperiment(indexer, raw_query=query ,page_start=retstart, page_size=retmax) as ex:
                     results = ex.run
                     ids = [str(res.doc_id) for res in results]
                     total_count = next(ex.count())
