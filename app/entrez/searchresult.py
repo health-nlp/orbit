@@ -8,11 +8,11 @@ excluded = ["error", "media_type", "content", "status_code", "background", "body
 class SearchResult(Response): 
     def __init__(self, retmode: str, error: str = None):
         self.retmode = retmode
-        self.media_type = "application/json"
+        self.media_type = "text/plain"        
         if retmode == "xml":
             self.media_type = "application/xml"
-        else:
-            self.media_type = "text/plain"
+        if retmode == "json":
+            self.media_type = "application/json"
         self.error = error
         self.content = self.render(None)
         super().__init__(None, 200, None, self.media_type, None)
@@ -70,7 +70,7 @@ class SearchResult(Response):
                 self._append_value_to_xml(sub, v)
         elif isinstance(value, list):
             for item in value: 
-                item_tag = ET.SubElement(parent, "Article")
+                item_tag = ET.SubElement(parent, "Id")
                 self._append_value_to_xml(item_tag, item)
         else: 
             parent.text = str(value)
@@ -124,7 +124,7 @@ class ESearchResult(SearchResult):
     def to_trec(self):
         buff = []
         for i, pmid in enumerate(self.idlist):
-            buff.append(f"{self.trecqid} Q0 {pmid} {i} {len(self.idlist)-i} {self.trectag}")
+            buff.append(f"{self.trecqid} Q0 {pmid} {i} {1-(i/len(self.idlist))} {self.trectag}")
         return "\n".join(buff)
 
 
