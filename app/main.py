@@ -29,11 +29,6 @@ async def test_index():
     files = [p.relative_to(folder).as_posix() for p in folder.rglob("*") if p.is_file()]
     print(files)
 
-
-"""
-    ESearch-like endpoint.
-    Example: GET /esearch?term=cancer+AND+therapy
-"""
 @app.get("/entrez/eutils/esearch.fcgi", tags=["PubMed Entrez"])
 async def esearch(
     term: str = Query(default=None, description="Search term using boolean queries", examples=["cancer", "(headache and ibuprofen)"]),
@@ -45,6 +40,10 @@ async def esearch(
     trecqid: str = Query(default="0", description="When returning a TREC run, the qid field."),
     trectag: str = Query(default="orbit", description="When returning a TREC run, the tag field.")
 ):
+    """
+        ESearch-like endpoint.
+        Example: GET /esearch?term=cancer+AND+therapy
+    """
 
     if term is None:
         return sr.SearchResult(error="Empty term and query_key - nothing todo", retmode=retmode)
@@ -52,10 +51,7 @@ async def esearch(
     esearch = ESearch(term=term, retstart=retstart, retmax=retmax, retmode=retmode, field=field, trecqid=trecqid, trectag=trectag)
     return esearch.search()
 
-# --------------
-# --- EFETCH ---
-# --------------
-@app.get("/efetch", tags=["PubMed Entrez"])
+@app.get("/entrez/eutils/efetch.fcgi", tags=["PubMed Entrez"])
 async def efetch(
     id: str = Query(default=..., description="Comma seperated list of UIDs (e.g. '12345678', '90123456')"),
     retmode: str = Query(default="json", description="Return format (json is default)"),
@@ -67,11 +63,7 @@ async def efetch(
     return efetch.fetch()
 
 
-
-# ----------------
-# --- ESUMMARY ---
-# ----------------
-@app.get("/esummary", tags=["PubMed Entrez"])
+@app.get("/entrez/eutils/esummary.fcgi", tags=["PubMed Entrez"])
 async def esummary(
     id: str = Query(default=..., description="Comma seperated list of UIDs"),
     retmode: str = Query(default="json", description="return format: xml/json"),
@@ -81,3 +73,28 @@ async def esummary(
 
     esummary = ESummary(id=id, retmode=retmode, retstart=retstart, retmax=retmax)
     return esummary.summarize()
+
+@app.get("/entrez/eutils/info.fcgi", tags=["PubMed Entrez"])
+async def esummary():
+
+    return "todo"
+
+@app.get("/ct/api/v2/version", tags=["ClinicalTrials.gov"])
+async def ctgov_version():
+    return "todo"
+
+@app.get("/ct/api/v2/studies", tags=["ClinicalTrials.gov"])
+async def ctgov_studies():
+    return "todo"
+
+@app.get("/ct/api/v2/studies/{nctId}", tags=["ClinicalTrials.gov"])
+async def ctgov_study():
+    return "todo"
+
+@app.get("/ct/api/v2/studies/metadata", tags=["ClinicalTrials.gov"])
+async def ctgov_studies_metadata():
+    return "todo"
+
+@app.get("/ct/api/v2/studies/search-areas", tags=["ClinicalTrials.gov"])
+async def ctgov_studies_search_areas():
+    return "todo"
