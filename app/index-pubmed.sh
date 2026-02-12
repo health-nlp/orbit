@@ -4,7 +4,7 @@ echo "----------------------------------------"
 echo "MODE: $RUN_MODE"
 echo "DOWNLOAD TARGET: $DOWNLOAD_TARGET"
 
-if [ -d index ] && [ "$(ls -A index)" ]; then
+if [ -d $ORBIT_PUBMED_INDEX_PATH ] && [ "$(ls -A $ORBIT_PUBMED_INDEX_PATH)" ]; then
   echo ">>> Index exists, skipping everything"
   exit 0
 fi
