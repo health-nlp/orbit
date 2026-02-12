@@ -131,17 +131,6 @@ class ESearchResult(SearchResult):
         return "\n".join(buff)
 
 
-
-class EFetchResult(SearchResult):
-    def __init__(self, 
-                 retmode: str,
-                 article_dicts: list,
-                 error = None):
-        self.retmode = retmode
-        self.article_dicts = article_dicts
-        super().__init__(retmode, error)
-
-
 class ESummaryResult(SearchResult): 
     def __init__(self, 
                  retstart: str,

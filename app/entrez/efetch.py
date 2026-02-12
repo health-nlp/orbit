@@ -1,3 +1,5 @@
+from datetime import datetime
+from fastapi import Response
 import lucene
 import os
 
@@ -6,6 +8,8 @@ from pybool_ir.index.pubmed import PubmedIndexer
 from pybool_ir.query.pubmed.parser import PubmedQueryParser
 from pybool_ir.index.pubmed import PubmedArticle
 from typing import List
+
+import xml.etree.ElementTree as ET
 
 from . import searchresult as sr
 from . import LOCAL_PUBMED_INDEX_PATH
@@ -62,12 +66,39 @@ class EFetch:
                 indexer = PubmedIndexer(index_path=LOCAL_PUBMED_INDEX_PATH, store_fields=True)
 
                 with AdHocExperiment(indexer, page_start=self.retstart, page_size=self.retmax) as ex:
-                    articles: List[PubmedArticle] = ex.indexer.search(query=query, n_hits=len(uid_list))
-                    article_dicts = [article.to_dict() for article in articles]
+                    docs = ex.indexer.search(query=query, n_hits=len(uid_list))
+                    articles = [d.to_dict() for d in docs]
 
-                    return sr.EFetchResult(retmode=self.retmode, article_dicts=article_dicts)
+                root = ET.Element("PubmedArticleSet")
+                for d in articles:
+                    pubmed_article = ET.SubElement(root, "PubmedArticle")
+                    medline_citation = ET.SubElement(pubmed_article, "MedlineCitaiton")
+                    pmid = ET.SubElement(medline_citation, "PMID", attrib={"Status": "MEDLINE", "Owner": "NLM", "IndexingMethod": "Automated"})
+                    pmid.text = d["id"]
+
+                    date_completed = ET.SubElement(medline_citation, "DateCompleted")
+                    year = ET.SubElement(date_completed, "Year")
+                    year.text = str(datetime.fromtimestamp(d["date"]).year)
+                    month = ET.SubElement(date_completed, "Month")
+                    month.text = str(datetime.fromtimestamp(d["date"]).month)
+                    day = ET.SubElement(date_completed, "Day")
+                    day.text = str(datetime.fromtimestamp(d["date"]).day)
+
+                    article = ET.SubElement(medline_citation, "Article")
+                    article_title = ET.SubElement(article, "ArticleTitle")
+                    article_title.text = d["title"]
+                    abstract = ET.SubElement(article, "Abstract")
+                    abstract_text = ET.SubElement(abstract, "AbstractText")
+                    abstract_text.text = d["abstract"]
+                    
+
+                header = """<?xml version="1.0" ?>
+<!DOCTYPE PubmedArticleSet PUBLIC "-//NLM//DTD PubMedArticle, 1st January 2025//EN" "https://dtd.nlm.nih.gov/ncbi/pubmed/out/pubmed_250101.dtd">
+"""
+                return Response(header + ET.tostring(root, encoding="unicode"),media_type="application/xml")
 
             except Exception as e: 
+                raise e
                 return sr.SearchResult(error=str(e), retmode=self.retmode)
 
 
