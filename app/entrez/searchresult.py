@@ -59,8 +59,9 @@ class SearchResult(Response):
                 xml_key = substitutions.get(key, key)
                 child = ET.SubElement(root, xml_key)
                 self._append_value_to_xml(child, value)
-        
-        return ET.tostring(root, encoding="unicode")
+        header = """<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE eSearchResult PUBLIC "-//NLM//DTD esearch 20060628//EN" "https://eutils.ncbi.nlm.nih.gov/eutils/dtd/20060628/esearch.dtd">"""
+        return header + "\n" + ET.tostring(root, encoding="unicode")
 
     # recursive helper function for clustered dict/lists
     def _append_value_to_xml(self, parent, value): 
