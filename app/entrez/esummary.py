@@ -1,17 +1,15 @@
-from functools import lru_cache
-from fastapi import FastAPI, HTTPException, Query, Response
+import lucene
+import os
 
 from pybool_ir.experiments.retrieval import AdHocExperiment
 from pybool_ir.index.pubmed import PubmedIndexer
 from pybool_ir.query.pubmed.parser import PubmedQueryParser
 from pybool_ir.index.pubmed import PubmedArticle
-from typing import List, Dict, Any, Tuple
+from typing import List
 
-import searchresult as sr
-
-import threading
-import lucene
-import os
+from . import searchresult as sr
+from . import LOCAL_PUBMED_INDEX_PATH
+from . import _lock
 
 class ESummary: 
     """
@@ -20,11 +18,7 @@ class ESummary:
     Retrieves the summaries given a list of uids
     Supports paging via retstart/retmax
     """
-
-
-    LOCAL_INDEX_PATH = os.getenv("LOCAL_INDEX_PATH", "app/index")
     vm = lucene.getVMEnv()
-    lock = threading.Lock()
     parser = PubmedQueryParser()
 
     def __init__(self, id: str, retmode: str, retstart: int, retmax: int):
@@ -58,13 +52,13 @@ class ESummary:
         :rtype: sr.SearchResult
         """
 
-        with self.lock:
+        with _lock:
             try: 
                 if not self.vm.isCurrentThreadAttached():
                     self.vm.attachCurrentThread()
 
                 query, uid_list = self.process_input(self.id, self.retstart, self.retmax)
-                indexer = PubmedIndexer(index_path=self.LOCAL_INDEX_PATH, store_fields=True)
+                indexer = PubmedIndexer(index_path=LOCAL_PUBMED_INDEX_PATH, store_fields=True)
 
                 with AdHocExperiment(indexer, page_start=self.retstart, page_size=self.retmax) as ex: 
                     articles: List[PubmedArticle] = experiment.indexer.search(query=query, n_hits=len(uid_list))

@@ -1,9 +1,9 @@
 import json
-from typing import Any
+from typing import Any, List
 import xml.etree.ElementTree as ET
 from fastapi import Response
 
-excluded = ["error", "media_type", "content", "status_code", "background", "body", "raw_headers", "retmode"]
+excluded = ["error", "media_type", "content", "status_code", "background", "body", "raw_headers", "retmode", "trecqid", "trectag"]
 
 class SearchResult(Response): 
     def __init__(self, retmode: str, error: str = None):
@@ -11,11 +11,11 @@ class SearchResult(Response):
         self.media_type = "application/json"
         if retmode == "xml":
             self.media_type = "application/xml"
+        else:
+            self.media_type = "text/plain"
         self.error = error
         self.content = self.render(None)
         super().__init__(None, 200, None, self.media_type, None)
-
-
 
     def to_json(self):
         class_name = self.__class__.__name__.lower().replace("result","")
@@ -29,8 +29,6 @@ class SearchResult(Response):
             data[f"{class_name}"] = result_content
 
         return json.dumps(data)
-    
-
 
     def to_xml(self): 
         substitutions = {
@@ -89,6 +87,8 @@ class SearchResult(Response):
             return bytes(self.to_xml(), encoding="utf-8")
         if self.retmode == "json":
             return bytes(self.to_json(), encoding="utf-8")
+        if self.__class__.__name__ == "ESearchResult" and self.retmode == "trec":
+            return bytes(self.to_trec(), encoding="utf-8")
         return bytes(self.to_json(), encoding="utf-8")
 
     def get_header(self, search_type):
@@ -105,9 +105,11 @@ class ESearchResult(SearchResult):
                  count: str, 
                  retmax: str,
                  retstart: str,
-                 idlist: str,
+                 idlist: List[str],
                  querytranslation: str,
                  translationset: str = None,
+                 trecqid: str = "0",
+                 trectag: str = "orbit",
                  error = None):
         self.count = count
         self.retmax = retmax
@@ -115,7 +117,16 @@ class ESearchResult(SearchResult):
         self.idlist = idlist
         self.querytranslation = querytranslation
         self.translationset = translationset
+        self.trecqid = trecqid
+        self.trectag = trectag
         super().__init__(retmode, error)
+
+    def to_trec(self):
+        buff = []
+        for i, pmid in enumerate(self.idlist):
+            buff.append(f"{self.trecqid} Q0 {pmid} {i} {len(self.idlist)-i} {self.trectag}")
+        return "\n".join(buff)
+
 
 
 class EFetchResult(SearchResult):

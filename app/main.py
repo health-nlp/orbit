@@ -1,37 +1,31 @@
-from functools import lru_cache
-from fastapi import FastAPI, HTTPException, Query, Response
+from fastapi import FastAPI, Query
 
-from pybool_ir.experiments.retrieval import AdHocExperiment
-from pybool_ir.index.pubmed import PubmedIndexer
+from fastapi.responses import RedirectResponse
 from pybool_ir.query.pubmed.parser import PubmedQueryParser
-from pybool_ir.index.pubmed import PubmedArticle
-from pybool_ir.query.ast import AtomNode, OperatorNode
-from typing import List, Dict, Any, Tuple
 
-import searchresult as sr
-from esearch import ESearch 
-from efetch import EFetch
-from esummary import ESummary
+import entrez.searchresult as sr
+from entrez.esearch import ESearch 
+from entrez.efetch import EFetch
+from entrez.esummary import ESummary
 
 import threading
 import lucene
 import os
 import pathlib
 
-# LOCAL_INDEX_PATH now can be controlled via environment variable.
-# Default for normal runs (in docker) is /app/index.
-# For CI/Test we will set LOCAL_INDEX_PATH via the workflow/environment to the test index folder.
-LOCAL_INDEX_PATH = os.getenv("LOCAL_INDEX_PATH", "app/index")
-
-app = FastAPI()
+app = FastAPI(title="Orbit")
 vm = lucene.getVMEnv()
 lock = threading.Lock()
 parser = PubmedQueryParser()
 
+@app.get("/", include_in_schema=False)
+async def docs_redirect():
+    return RedirectResponse(url="/docs")
+
 # Test index folder content
-@app.get("/test")
+@app.get("/test", include_in_schema=False)
 async def test_index(): 
-    folder = pathlib.Path(LOCAL_INDEX_PATH)
+    folder = pathlib.Path(LOCAL_PUBMED_INDEX_PATH)
     files = [p.relative_to(folder).as_posix() for p in folder.rglob("*") if p.is_file()]
     print(files)
 
@@ -40,26 +34,28 @@ async def test_index():
     ESearch-like endpoint.
     Example: GET /esearch?term=cancer+AND+therapy
 """
-@app.get("/entrez/eutils/esearch.fcgi")
+@app.get("/entrez/eutils/esearch.fcgi", tags=["PubMed Entrez"])
 async def esearch(
-    term: str = Query(default=None, description="Search term using boolean queries"),
+    term: str = Query(default=None, description="Search term using boolean queries", examples=["cancer", "(headache and ibuprofen)"]),
     retstart: int = Query(default="0", description="the start index for UIDs (default=0)"),
     retmax: int = Query(default="20", description="the end index for UIDs (default=20)"), 
-    retmode: str = Query(default="xml", description="Return format xml or json (default=xml)"),
-    field: str = Query(default=None, description="Limitation to certain Entrez fields"),    # currently not used
-    db: str = Query(default="pubmed", description="Database to search")
+    retmode: str = Query(default="xml", description="Return format xml or json (default=xml)", openapi_examples={"xml": {"value": "xml"},"json": {"value": "json"},"trec": {"value": "trec"}}),
+    field: str = Query(default=None, description="Limitation to certain Entrez fields"), 
+    db: str = Query(default="pubmed", description="Database to search"),
+    trecqid: str = Query(default="0", description="When returning a TREC run, the qid field."),
+    trectag: str = Query(default="orbit", description="When returning a TREC run, the tag field.")
 ):
 
     if term is None:
         return sr.SearchResult(error="Empty term and query_key - nothing todo", retmode=retmode)
 
-    esearch = ESearch(term=term, retstart=retstart, retmax=retmax, retmode=retmode, field=field)
+    esearch = ESearch(term=term, retstart=retstart, retmax=retmax, retmode=retmode, field=field, trecqid=trecqid, trectag=trectag)
     return esearch.search()
 
 # --------------
 # --- EFETCH ---
 # --------------
-@app.get("/efetch")
+@app.get("/efetch", tags=["PubMed Entrez"])
 async def efetch(
     id: str = Query(default=..., description="Comma seperated list of UIDs (e.g. '12345678', '90123456')"),
     retmode: str = Query(default="json", description="Return format (json is default)"),
@@ -75,7 +71,7 @@ async def efetch(
 # ----------------
 # --- ESUMMARY ---
 # ----------------
-@app.get("/esummary")
+@app.get("/esummary", tags=["PubMed Entrez"])
 async def esummary(
     id: str = Query(default=..., description="Comma seperated list of UIDs"),
     retmode: str = Query(default="json", description="return format: xml/json"),
