@@ -73,7 +73,6 @@ class SearchResult(Response):
                 item_tag = ET.SubElement(parent, "Id")
                 self._append_value_to_xml(item_tag, item)
         else: 
-            print(parent.tag)
             parent.tag = parent.tag.capitalize()
             parent.text = str(value)
 
