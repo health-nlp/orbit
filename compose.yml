@@ -7,8 +7,8 @@ services:
     environment:
       MODE: pubmed
     volumes:
-      - ${ORBIT_PUBMED_INDEX_PATH:-./index}:/app/index-pubmed
-      - ${ORBIT_PUBMED_BASELINE_PATH:-./baseline}:/app/baseline-pubmed
+      - ${ORBIT_PUBMED_INDEX_PATH:-./index-pubmed}:/app/index-pubmed
+      - ${ORBIT_PUBMED_BASELINE_PATH:-./baseline-pubmed}:/app/baseline-pubmed
     restart: on-failure
 
   orbit_ctgov_data_builder:
@@ -19,8 +19,8 @@ services:
     environment:
       MODE: ctgov
     volumes:
-      - ${ORBIT_CTGOV_INDEX_PATH:-./index}:/app/index-ctgov
-      - ${ORBIT_CTGOV_BASELINE_PATH:-./baseline}:/app/baseline-ctgov
+      - ${ORBIT_CTGOV_INDEX_PATH:-./index-ctgov}:/app/index-ctgov
+      - ${ORBIT_CTGOV_BASELINE_PATH:-./baseline-ctgov}:/app/baseline-ctgov
     restart: on-failure
 
   orbit_api:
