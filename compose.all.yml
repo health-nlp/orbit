@@ -9,8 +9,8 @@ services:
       ORBIT_PUBMED_INDEX_PATH: index-pubmed
       ORBIT_PUBMED_BASELINE_PATH: baseline-pubmed
     volumes:
-      - ${ORBIT_PUBMED_INDEX_PATH}:/app/index-pubmed
-      - ${ORBIT_PUBMED_BASELINE_PATH}:/app/baseline-pubmed
+      - ./index-pubmed:/app/index-pubmed
+      - ./baseline-pubmed:/app/baseline-pubmed
     restart: on-failure
 
   orbit_ctgov_data_builder:
@@ -23,8 +23,8 @@ services:
       ORBIT_CTGOV_INDEX_PATH: index-ctgov
       ORBIT_CTGOV_BASELINE_PATH: baseline-ctgov
     volumes:
-      - ${ORBIT_CTGOV_INDEX_PATH}:/app/index-ctgov
-      - ${ORBIT_CTGOV_BASELINE_PATH}:/app/baseline-ctgov
+      - ./index-ctgov:/app/index-ctgov
+      - ./baseline-ctgov:/app/baseline-ctgov
     restart: on-failure
 
   orbit_api:
@@ -44,6 +44,6 @@ services:
     ports:
       - "${ORBIT_PORT:-8333}:8000"
     volumes:
-      - ${ORBIT_PUBMED_INDEX_PATH}:/app/index-pubmed
-      - ${ORBIT_CTGOV_INDEX_PATH}:/app/index-ctgov
+      - ./index-pubmed:/app/index-pubmed
+      - /index-ctgov:/app/index-ctgov
     restart: always
