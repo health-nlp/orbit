@@ -12,7 +12,7 @@ elif [ "$MODE" = "ctgov" ]; then
     uv run -m pybool_ir.cli ctgov download -b $ORBIT_CTGOV_BASELINE_PATH
     uv run -m pybool_ir.cli ctgov index -b $ORBIT_CTGOV_BASELINE_PATH -i $ORBIT_CTGOV_INDEX_PATH -s1
 elif [ "$MODE" = "api" ]; then
-    uv run -m fastapi dev main.py --host 0.0.0.0 --port 8333
+    uv run -m fastapi dev main.py --host 0.0.0.0 --port $ORBIT_PORT
 else 
     echo "UNKNOWN MODE=$MODE"
     exit 1
