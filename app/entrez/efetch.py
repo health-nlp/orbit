@@ -67,29 +67,36 @@ class EFetch:
 
                 with AdHocExperiment(indexer, page_start=self.retstart, page_size=self.retmax) as ex:
                     docs = ex.indexer.search(query=query, n_hits=len(uid_list))
-                    articles = [d.to_dict() for d in docs]
 
-                root = ET.Element("PubmedArticleSet")
-                for d in articles:
-                    pubmed_article = ET.SubElement(root, "PubmedArticle")
-                    medline_citation = ET.SubElement(pubmed_article, "MedlineCitaiton")
-                    pmid = ET.SubElement(medline_citation, "PMID", attrib={"Status": "MEDLINE", "Owner": "NLM", "IndexingMethod": "Automated"})
-                    pmid.text = d["id"]
+                    root = ET.Element("PubmedArticleSet")
+                    for d in docs:
+                        pubmed_article = ET.SubElement(root, "PubmedArticle")
+                        medline_citation = ET.SubElement(pubmed_article, "MedlineCitaiton")
+                        pmid = ET.SubElement(medline_citation, "PMID", attrib={"Status": "MEDLINE", "Owner": "NLM", "IndexingMethod": "Automated"})
+                        pmid.text = d["id"]
 
-                    date_completed = ET.SubElement(medline_citation, "DateCompleted")
-                    year = ET.SubElement(date_completed, "Year")
-                    year.text = str(datetime.fromtimestamp(d["date"]).year)
-                    month = ET.SubElement(date_completed, "Month")
-                    month.text = str(datetime.fromtimestamp(d["date"]).month)
-                    day = ET.SubElement(date_completed, "Day")
-                    day.text = str(datetime.fromtimestamp(d["date"]).day)
+                        date_completed = ET.SubElement(medline_citation, "DateCompleted")
+                        raw_date = d["date"]
 
-                    article = ET.SubElement(medline_citation, "Article")
-                    article_title = ET.SubElement(article, "ArticleTitle")
-                    article_title.text = d["title"]
-                    abstract = ET.SubElement(article, "Abstract")
-                    abstract_text = ET.SubElement(abstract, "AbstractText")
-                    abstract_text.text = d["abstract"]
+                        try: 
+                            if isinstance(raw_date, (int, float)):
+                                dt_obj = datetime.fromtimestamp(raw_date)
+                            else: 
+                                dt_obj = raw_date
+
+                            ET.SubElement(date_completed, "Year").text = str(dt_obj.year)
+                            ET.SubElement(date_completed, "Month").text = str(dt_obj.month).zfill(2)
+                            ET.SubElement(date_completed, "Day").text = str(dt_obj.day).zfill(2)
+
+                        except Exception: 
+                            ET.SubElement(date_completed, "Year").text = "0000"
+                        
+                        article = ET.SubElement(medline_citation, "Article")
+                        article_title = ET.SubElement(article, "ArticleTitle")
+                        article_title.text = d["title"]
+                        abstract = ET.SubElement(article, "Abstract")
+                        abstract_text = ET.SubElement(abstract, "AbstractText")
+                        abstract_text.text = d["abstract"]
                     
 
                 header = """<?xml version="1.0" ?>
