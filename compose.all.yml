@@ -44,8 +44,13 @@ services:
       orbit_ctgov_data_builder:
         condition: service_completed_successfully
     ports:
-      - "${ORBIT_PORT:-8333}:8000"
+      - "${ORBIT_PORT}:8000"
     volumes:
       - ./index-pubmed:/app/index-pubmed
       - ./index-ctgov:/app/index-ctgov
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://0.0.0.0:${ORBIT_PORT}/docs"]
+      interval: 30s
+      timeout: 10s
+      retries: 3      
     restart: always
