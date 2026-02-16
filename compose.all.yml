@@ -20,8 +20,8 @@ services:
     container_name: orbit_ctgov_data_builder
     environment:
       MODE: ctgov
-      ORBIT_CTGOV_INDEX_PATH: index-ctgov
-      ORBIT_CTGOV_BASELINE_PATH: baseline-ctgov
+      ORBIT_CTGOV_INDEX_PATH: /app/index-ctgov
+      ORBIT_CTGOV_BASELINE_PATH: /app/baseline-ctgov
     volumes:
       - ./index-ctgov:/app/index-ctgov
       - ./baseline-ctgov:/app/baseline-ctgov
@@ -34,8 +34,8 @@ services:
     container_name: orbit_api
     environment:
       MODE: api
-      ORBIT_PUBMED_INDEX_PATH: index-pubmed
-      ORBIT_CTGOV_INDEX_PATH: index-ctgov
+      ORBIT_PUBMED_INDEX_PATH: /app/index-pubmed
+      ORBIT_CTGOV_INDEX_PATH: /app/index-ctgov
     depends_on:
       orbit_pubmed_data_builder:
         condition: service_completed_successfully
