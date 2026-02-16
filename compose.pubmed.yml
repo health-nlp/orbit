@@ -11,6 +11,7 @@ services:
     volumes:
       - ./index-pubmed:/app/index-pubmed
       - ./baseline-pubmed:/app/baseline-pubmed
+    exclude_from_hc: true      
     restart: on-failure
 
   orbit_api:

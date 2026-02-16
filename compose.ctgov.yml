@@ -11,6 +11,7 @@ services:
     volumes:
       - ./index-ctgov:/app/index-ctgov
       - ./baseline-ctgov:/app/baseline-ctgov
+    exclude_from_hc: true      
     restart: on-failure
 
   orbit_api:
