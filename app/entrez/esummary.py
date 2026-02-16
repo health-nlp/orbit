@@ -1,11 +1,15 @@
 import lucene
 import os
 
+from fastapi import Response
+
 from pybool_ir.experiments.retrieval import AdHocExperiment
 from pybool_ir.index.pubmed import PubmedIndexer
 from pybool_ir.query.pubmed.parser import PubmedQueryParser
 from pybool_ir.index.pubmed import PubmedArticle
 from typing import List
+
+import xml.etree.ElementTree as ET
 
 from . import searchresult as sr
 from . import ORBIT_PUBMED_INDEX_PATH
@@ -61,14 +65,38 @@ class ESummary:
                 indexer = PubmedIndexer(index_path=ORBIT_PUBMED_INDEX_PATH, store_fields=True)
 
                 with AdHocExperiment(indexer, page_start=self.retstart, page_size=self.retmax) as ex: 
-                    articles: List[PubmedArticle] = experiment.indexer.search(query=query, n_hits=len(uid_list))
-                    summaries = [self.to_summary(a) for a in articles]
+                    articles: List[PubmedArticle] = ex.indexer.search(query=query, n_hits=len(uid_list))
+                    # summaries = [self.to_summary(a) for a in articles]
 
-                    return sr.ESummaryResult(retstart=self.retstart,retmax=self.retmax,retmode=self.retmode,summaries=summaries)
+                    header = """<?xml version="1.0" ?>
+<!DOCTYPE PubmedArticleSet PUBLIC "-//NLM//DTD PubMedArticle, 1st January 2025//EN" "https://dtd.nlm.nih.gov/ncbi/pubmed/out/pubmed_250101.dtd">
+"""
+
+                    root = ET.Element("eSummaryResult")
+                    for a in articles: 
+                        print("--- DEBUG DUMP START ---")
+                        print(a.fields) 
+                        print("--- DEBUG DUMP END ---")
+                        docsum = ET.SubElement(root, "DocSum")
+
+                        doc_id = ET.SubElement(docsum, "Id")
+                        doc_id.text = a["id"]
+                        doc_title = ET.SubElement(docsum, "Title")
+                        doc_title.text = a["title"]
+                        
+                        doc_pubtype_list = ET.SubElement(docsum, "PubTypeList")
+                        for pubtype in a.fields["publication_type"]:
+                            publication_type = ET.SubElement(doc_pubtype_list, "PubType")
+                            publication_type.text = str(pubtype)
+                    
+
+                    #summary = header + ET.tostring(root, encoding="unicode"), 
+                    return Response(header + ET.tostring(root, encoding="unicode"),media_type="application/xml")
+                    #return sr.ESummaryResult(retstart=self.retstart,retmax=self.retmax,retmode=self.retmode,summaries=summary)
 
             except Exception as e: 
+                raise e
                 return sr.SearchResult(retmode=self.retmode, error=str(e))
-
 
     # -----------------------
     # --- ESummary Helper ---
@@ -120,13 +148,13 @@ class ESummary:
         :rtype: dict
         """
 
-        d = article.to_dict()
+        # d = article.to_dict()
 
-        return {
-            "id": d.get("id"),
-            "title": d.get("title"),
-            "authors": [a.get("names") for a in d.get("authors", [])][:5],
-            "journal": d.get("publication_type"),
-            "pubdate": d.get("date"),
-            "pubtype": d.get("publication_type")
-        }
+        # return {
+        #     "id": d.get("id"),
+        #     "title": d.get("title"),
+        #     "authors": [a.get("names") for a in d.get("authors", [])][:5],
+        #     "journal": d.get("publication_type"),
+        #     "pubdate": d.get("date"),
+        #     "pubtype": d.get("publication_type")
+        # }
