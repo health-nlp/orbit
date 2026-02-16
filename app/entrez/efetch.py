@@ -70,6 +70,9 @@ class EFetch:
 
                     root = ET.Element("PubmedArticleSet")
                     for d in docs:
+                        print("--- DEBUG DUMP START ---")
+                        print(d.fields) 
+                        print("--- DEBUG DUMP END ---")
                         pubmed_article = ET.SubElement(root, "PubmedArticle")
                         medline_citation = ET.SubElement(pubmed_article, "MedlineCitaiton")
                         pmid = ET.SubElement(medline_citation, "PMID", attrib={"Status": "MEDLINE", "Owner": "NLM", "IndexingMethod": "Automated"})
@@ -92,11 +95,20 @@ class EFetch:
                             ET.SubElement(date_completed, "Year").text = "0000"
                         
                         article = ET.SubElement(medline_citation, "Article")
-                        article_title = ET.SubElement(article, "ArticleTitle")
-                        article_title.text = d["title"]
+                        ET.SubElement(article, "ArticleTitle").text = d["title"]
+
                         abstract = ET.SubElement(article, "Abstract")
-                        abstract_text = ET.SubElement(abstract, "AbstractText")
-                        abstract_text.text = d["abstract"]
+                        ET.SubElement(abstract, "AbstractText").text = d["abstract"]
+
+                        publication_type_list = ET.SubElement(article, "PublicationTypeList")
+                        for pb_type in d.fields["publication_type"]: 
+                            publication_type = ET.SubElement(publication_type_list, "PublicationType")
+                            publication_type.text = str(pb_type)
+
+                        keyword_list = ET.SubElement(medline_citation, "KeywordList")
+                        for key in d.fields["keyword_list"]:
+                            keyword = ET.SubElement(keyword_list, "Keyword")
+                            keyword.text = str(key)
                     
 
                 header = """<?xml version="1.0" ?>
