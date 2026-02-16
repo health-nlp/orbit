@@ -30,7 +30,7 @@ services:
     volumes:
       - ./index-pubmed:/app/index-pubmed
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://0.0.0.0:${ORBIT_PORT}/docs"]
+      test: ["CMD", "curl", "-f", "http://localhost:${ORBIT_PORT}/docs"]
       interval: 30s
       timeout: 10s
       retries: 3           
