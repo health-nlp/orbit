@@ -2,7 +2,7 @@
 
 _Open Re-implementation of Biomedical Literature APIs_
 
-Orbit is a framework for self-hosting clearn room re-implementations of biomedical literature APIs. The APIs that are currently supported include
+Orbit is a framework for self-hosting clean room re-implementations of biomedical literature APIs. The APIs that are currently supported include
 
  - Pubmed Entrez
  - ClinicalTrials.gov

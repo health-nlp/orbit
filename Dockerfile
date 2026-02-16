@@ -8,8 +8,6 @@ WORKDIR /app
 
 # ---------- Dependencies ----------
 RUN pip install --retries=10 --default-timeout=500 uv
-RUN python3 -m ensurepip
-RUN uv run python -m ensurepip
 
 COPY pyproject.toml ./
 # Base dependencies
@@ -37,5 +35,4 @@ RUN uv add "fastapi[standard]"
 COPY ./app /app
 RUN chmod +x /app/entrypoint.sh
 
-EXPOSE 8333
 ENTRYPOINT ["/app/entrypoint.sh"]

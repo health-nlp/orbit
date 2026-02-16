@@ -11,6 +11,7 @@ services:
     volumes:
       - ./index-ctgov:/app/index-ctgov
       - ./baseline-ctgov:/app/baseline-ctgov
+    exclude_from_hc: true      
     restart: on-failure
 
   orbit_api:
@@ -29,4 +30,9 @@ services:
       - "${ORBIT_PORT:-8333}:8000"
     volumes:
       - ./index-ctgov:/app/index-ctgov
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${ORBIT_PORT}/docs"]
+      interval: 30s
+      timeout: 10s
+      retries: 3           
     restart: always
