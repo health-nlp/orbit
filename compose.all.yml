@@ -45,5 +45,5 @@ services:
       - "${ORBIT_PORT:-8333}:8000"
     volumes:
       - ./index-pubmed:/app/index-pubmed
-      - /index-ctgov:/app/index-ctgov
+      - ./index-ctgov:/app/index-ctgov
     restart: always
