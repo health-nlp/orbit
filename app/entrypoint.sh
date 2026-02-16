@@ -6,6 +6,8 @@ echo "MODE=$MODE"
 if [ "$MODE" = "pubmed" ]; then
     exec sh index-pubmed.sh
 elif [ "$MODE" = "ctgov" ]; then
+    echo $ORBIT_CTGOV_INDEX_PATH
+    echo $ORBIT_CTGOV_INDEX_PATH
     if [ -d $ORBIT_CTGOV_INDEX_PATH ] && [ "$(ls -A $ORBIT_CTGOV_INDEX_PATH)" ]; then
         exit 0
     fi
