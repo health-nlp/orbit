@@ -1,18 +1,4 @@
 services:
-  orbit_pubmed_data_builder:
-    platform: linux/amd64
-    build: .
-    image: orbit:latest
-    container_name: orbit_pubmed_data_builder
-    environment:
-      MODE: pubmed
-      ORBIT_PUBMED_INDEX_PATH: index-pubmed
-      ORBIT_PUBMED_BASELINE_PATH: baseline-pubmed
-    volumes:
-      - ./index-pubmed:/app/index-pubmed
-      - ./baseline-pubmed:/app/baseline-pubmed
-    restart: on-failure
-
   orbit_ctgov_data_builder:
     platform: linux/amd64
     build: .
@@ -34,18 +20,13 @@ services:
     container_name: orbit_api
     environment:
       MODE: api
-      ORBIT_PUBMED_INDEX_PATH: /app/index-pubmed
       ORBIT_CTGOV_INDEX_PATH: /app/index-ctgov
-      ORBIT_PUBMED_SERVICE: 1
       ORBIT_CTGOV_SERVICE: 1
     depends_on:
-      orbit_pubmed_data_builder:
-        condition: service_completed_successfully
       orbit_ctgov_data_builder:
         condition: service_completed_successfully
     ports:
       - "${ORBIT_PORT:-8333}:8000"
     volumes:
-      - ./index-pubmed:/app/index-pubmed
       - ./index-ctgov:/app/index-ctgov
     restart: always
