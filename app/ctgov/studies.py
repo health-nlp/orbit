@@ -9,6 +9,8 @@ from pybool_ir.query.essie.parser import EssieQueryParser
 
 from . import ORBIT_CTGOV_INDEX_PATH
 from . import _lock
+from .metadata import _metadata
+from .searchareas import _searchareas
 
 vm = lucene.getVMEnv()
 parser = EssieQueryParser()
@@ -107,3 +109,11 @@ def studies(rformat: str, query_term: str, page_start: int, page_size: int) -> S
             })
         except Exception as e:
             raise e
+
+
+def metadata():
+    return Response(json.dumps(_metadata), media_type="application/json")
+
+def searchareas():
+    return Response(json.dumps(_searchareas), media_type="application/json")
+

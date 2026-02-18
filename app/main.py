@@ -12,6 +12,8 @@ from entrez.esummary import ESummary
 
 from ctgov.studies import studies as get_ctgov_studies
 from ctgov.studies import study as get_ctgov_study
+from ctgov.studies import metadata as get_ctgov_metadata
+from ctgov.studies import searchareas as get_ctgov_searchareas
 
 ORBIT_VERSION = "0.1.0"
 app = FastAPI(title="Orbit")
@@ -92,14 +94,15 @@ if ORBIT_CTGOV_SERVICE is not None:
     ):
         return get_ctgov_studies(rformat, query_term, page_start, page_size)
 
+    @app.get("/ct/api/v2/studies/metadata", tags=["ClinicalTrials.gov"])
+    async def ctgov_studies_metadata():
+        return get_ctgov_metadata()
+
+    @app.get("/ct/api/v2/studies/search-areas", tags=["ClinicalTrials.gov"])
+    async def ctgov_studies_search_areas():
+        return get_ctgov_searchareas()
+
     @app.get("/ct/api/v2/studies/{nctId}", tags=["ClinicalTrials.gov"])
     async def ctgov_study(nctId: str):
         return get_ctgov_study("json", nctId)
 
-    @app.get("/ct/api/v2/studies/metadata", tags=["ClinicalTrials.gov"])
-    async def ctgov_studies_metadata():
-        return "todo"
-
-    @app.get("/ct/api/v2/studies/search-areas", tags=["ClinicalTrials.gov"])
-    async def ctgov_studies_search_areas():
-        return "todo"
