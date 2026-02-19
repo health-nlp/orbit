@@ -9,6 +9,7 @@ import entrez.searchresult as sr
 from entrez.esearch import ESearch 
 from entrez.efetch import EFetch
 from entrez.esummary import ESummary
+from entrez.einfo import EInfo
 
 from ctgov.studies import studies as get_ctgov_studies
 from ctgov.studies import study as get_ctgov_study
@@ -73,8 +74,9 @@ if ORBIT_PUBMED_SERVICE is not None:
         return esummary.summarize()
 
     @app.get("/entrez/eutils/info.fcgi", tags=["PubMed Entrez"])
-    async def esummary():
-        return "todo"
+    async def info():
+        einfo = EInfo()
+        return einfo.get_info()
 
 
 if ORBIT_CTGOV_SERVICE is not None:

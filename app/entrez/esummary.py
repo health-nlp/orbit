@@ -66,7 +66,6 @@ class ESummary:
 
                 with AdHocExperiment(indexer, page_start=self.retstart, page_size=self.retmax) as ex: 
                     articles: List[PubmedArticle] = ex.indexer.search(query=query, n_hits=len(uid_list))
-                    # summaries = [self.to_summary(a) for a in articles]
 
                     header = """<?xml version="1.0" ?>
 <!DOCTYPE PubmedArticleSet PUBLIC "-//NLM//DTD PubMedArticle, 1st January 2025//EN" "https://dtd.nlm.nih.gov/ncbi/pubmed/out/pubmed_250101.dtd">
@@ -132,29 +131,3 @@ class ESummary:
         start = max(retstart, 0)
         end = start + retmax
         return uid_list[start:end]
-
-
-    # generates a dictionary as summary of PubMed articles
-    def to_summary(self, article: PubmedArticle) -> dict: 
-        """
-        Convert a full PubMedArticle into a lightweight summary dictionary.
-
-        Extracts only the most relevant metadata fields typically returned by
-        the ESummary endpoint (ID, title, authors, journal, publication date).
-
-        :param article: PubmedArticle instance retrieved from the index
-        :type article: PubmedArticle
-        :return: Dictionary containing summarized article metadata
-        :rtype: dict
-        """
-
-        # d = article.to_dict()
-
-        # return {
-        #     "id": d.get("id"),
-        #     "title": d.get("title"),
-        #     "authors": [a.get("names") for a in d.get("authors", [])][:5],
-        #     "journal": d.get("publication_type"),
-        #     "pubdate": d.get("date"),
-        #     "pubtype": d.get("publication_type")
-        # }
