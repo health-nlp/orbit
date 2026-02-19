@@ -102,8 +102,7 @@ class ESearch:
                 indexer = PubmedIndexer(index_path=ORBIT_PUBMED_INDEX_PATH)    
                 with AdHocExperiment(indexer, raw_query=query ,page_start=retstart, page_size=retmax) as ex:
                     results = ex.run
-                    # ids = [str(res.doc_id) for res in results]
-                    ids = [str(res.doc_id) for res in sorted(results, key=lambda x: x.score, reverse=True)]
+                    ids = list(set([str(res.doc_id) for res in sorted(results, key=lambda x: x.score, reverse=True)]))
                     total_count = next(ex.count())
                     return (total_count, ids)
             except Exception as e:
