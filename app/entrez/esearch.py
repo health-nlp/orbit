@@ -59,6 +59,10 @@ class ESearch:
 
         # Parse and prepare query (will raise on malformed query)
         ast = self.parser.parse_ast(self.term)
+
+        if self.field: 
+            self.set_field_recursively(ast, self.field)
+            
         self.parser.parse_lucene(self.term)
         formatted_query = self.parser.format(ast)
 

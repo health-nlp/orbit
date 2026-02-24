@@ -53,7 +53,7 @@ if ORBIT_PUBMED_SERVICE is not None:
     @app.get("/entrez/eutils/efetch.fcgi", tags=["PubMed Entrez"])
     async def efetch(
         id: str = Query(default=..., description="Comma seperated list of UIDs (e.g. '12345678', '90123456')"),
-        retmode: str = Query(default="json", description="Return format (json is default)"),
+        retmode: str = Query(default="json", description="Return format (json is default)", openapi_examples={"xml": {"value": "xml"}, "txt": {"value": "txt"}}),
         retstart: int = Query(default=None, description="optional start-index of given id-list"),
         retmax: int = Query(default=None, descrition="optional start-index of given id-list")
     ):
@@ -65,7 +65,7 @@ if ORBIT_PUBMED_SERVICE is not None:
     @app.get("/entrez/eutils/esummary.fcgi", tags=["PubMed Entrez"])
     async def esummary(
         id: str = Query(default=..., description="Comma seperated list of UIDs"),
-        retmode: str = Query(default="json", description="return format: xml/json"),
+        retmode: str = Query(default="json", description="return format: xml/json", openapi_examples={"xml": {"value": "xml"}, "json": {"value": "json"}}),
         retstart: int = Query(default=0, description="the start index (default=0)"), 
         retmax: int = Query(default=20, description="the end index (default=20)")
     ):
