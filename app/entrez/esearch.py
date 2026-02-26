@@ -18,7 +18,7 @@ class ESearch:
     and returns matching document IDs with paging support (retstart/retmax)
     """
 
-    LOCAL_INDEX_PATH = os.getenv("LOCAL_INDEX_PATH", "/app/index")
+    LOCAL_INDEX_PATH = os.getenv("LOCAL_INDEX_PATH", "app/index-pubmed")
     vm = lucene.getVMEnv()
     parser = PubmedQueryParser()
 
@@ -59,6 +59,10 @@ class ESearch:
 
         # Parse and prepare query (will raise on malformed query)
         ast = self.parser.parse_ast(self.term)
+
+        if self.field: 
+            self.set_field_recursively(ast, self.field)
+            
         self.parser.parse_lucene(self.term)
         formatted_query = self.parser.format(ast)
 
@@ -102,7 +106,7 @@ class ESearch:
                 indexer = PubmedIndexer(index_path=ORBIT_PUBMED_INDEX_PATH)    
                 with AdHocExperiment(indexer, raw_query=query ,page_start=retstart, page_size=retmax) as ex:
                     results = ex.run
-                    ids = [str(res.doc_id) for res in results]
+                    ids = list(set([str(res.doc_id) for res in sorted(results, key=lambda x: x.score, reverse=True)]))
                     total_count = next(ex.count())
                     return (total_count, ids)
             except Exception as e:
