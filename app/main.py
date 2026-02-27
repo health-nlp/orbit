@@ -38,11 +38,34 @@ if ORBIT_PUBMED_SERVICE is not None:
         field: str = Query(default=None, description="Limitation to certain Entrez fields"), 
         db: str = Query(default="pubmed", description="Database to search"),
         trecqid: str = Query(default="0", description="When returning a TREC run, the qid field."),
-        trectag: str = Query(default="orbit", description="When returning a TREC run, the tag field.")
-    ):
+        trectag: str = Query(default="orbit", description="When returning a TREC run, the tag field.")):
+
         """
-            ESearch-like endpoint.
-            Example: GET /esearch?term=cancer+AND+therapy
+            # ESearch-like endpoint.
+            
+            ## Function
+            Provides a list of UIDs matching a text query
+
+
+            ## Required Parameters
+            **term:** Pubmed query. All special characters must be URL encoded. 
+
+
+            ## Optional Parameters
+            **retstart:** Sequential index of the first UID in the retrieved set to be shown in the XML output (default=0, corresponding to the first record of the entire set).
+            This parameter can be used in conjunction with retmax to download an arbitrary subset of UIDs retrieved from a search.
+
+            **retmax:** Total number of UIDs from the retrieved set to be shown in the XML output (default=20). By defaul, ESearch only includes the first 20 UIDs retrieved in the XML
+            output.
+
+            **rettype:** Retrieval type. There are two allowed values for ESearch 'uilist' (default), which displays the standard XML output, and 'count', which displays only the <Count> tag.
+
+            **retmode:** Retrieval type. Determines the format of the returned output. The default value is 'xml' for ESearch XML, but 'json' is also supported to return output in JSON format.
+
+            **field:** Search field. If used, the entire search term will be limited to the specified Entrez field.
+
+            ## Example
+            GET /esearch?term=cancer+AND+therapy
         """
 
         if term is None:
@@ -51,6 +74,8 @@ if ORBIT_PUBMED_SERVICE is not None:
         esearch = ESearch(term=term, retstart=retstart, retmax=retmax, retmode=retmode, rettype=rettype, field=field, trecqid=trecqid, trectag=trectag)
         return esearch.search()
 
+        
+
     @app.get("/entrez/eutils/efetch.fcgi", tags=["PubMed Entrez"])
     async def efetch(
         id: str = Query(default=..., description="Comma seperated list of UIDs (e.g. '12345678', '90123456')"),
@@ -58,6 +83,24 @@ if ORBIT_PUBMED_SERVICE is not None:
         retstart: int = Query(default=None, description="optional start-index of given id-list"),
         retmax: int = Query(default=None, descrition="optional start-index of given id-list")
     ):
+        """
+        # EFetch-like endpoint
+
+        ## Functions
+        Return formatted data records for a list of input UIDs
+
+        ## Required Parameters
+        **id:** UID list. Either a single UID or a comma-delimited list of UIDs may be provided. All of the UIDs must be from the pubmed database.
+        There is no set maximum for the number of UIDs that can be passed to EFetch.
+
+        ## Optional Parameters
+        **retmode:** Retrieval mode. This parameter specifies the data format of the records returned, such as plain text or XML
+        
+        **retstart:** Sequential index of the first record to be retrieved (default=0, corresponding to the first of the entire set). This parameter can be used in conjunction
+        with retmax to download an arbitrary subset of records from the input set.
+        
+        **retmax:** Total number of records from the input set ot be retrieved without limitations
+        """
 
         efetch = EFetch(id=id, retmode=retmode, retstart=retstart, retmax=retmax)
         return efetch.fetch()
@@ -71,11 +114,37 @@ if ORBIT_PUBMED_SERVICE is not None:
         retmax: int = Query(default=20, description="the end index (default=20)")
     ):
 
+        """
+        # EFetch-like endpoint
+
+        ## Functions
+        Return formatted data records for a list of input UIDs
+
+        ## Required Parameters
+        **id:** UID list. Either a single UID or a comma-delimited list of UIDs may be provided. All of the UIDs must be from the pubmed database.
+        There is no set maximum for the number of UIDs that can be passed to EFetch.
+
+        ## Optional Parameters
+        **retmode:** Retrieval mode. This parameter specifies the data format of the returned output, such as plain JSON or XML
+
+        **retstart:** Sequential index of the first DocSum to be retrieved (default=0, corresponding to the first of the entire set). This parameter can be used in conjunction
+        with retmax to download an arbitrary subset of records from the input set.
+
+        **retmax:** Total number of DocSum from the input set ot be retrieved without limitations
+        """
+
         esummary = ESummary(id=id, retmode=retmode, retstart=retstart, retmax=retmax)
         return esummary.summarize()
 
     @app.get("/entrez/eutils/info.fcgi", tags=["PubMed Entrez"])
     async def info():
+        """
+        # EInfo-like endpoint
+
+        ## Functions
+        Provides a list of the names of all valid Entrez databases
+        """
+
         einfo = EInfo()
         return einfo.get_info()
 

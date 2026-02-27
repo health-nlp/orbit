@@ -146,7 +146,6 @@ class ESearchResult(SearchResult):
 
         
 
-
 class ESummaryResult(SearchResult): 
     def __init__(self, 
                  retstart: str,
@@ -159,7 +158,6 @@ class ESummaryResult(SearchResult):
         self.retmode = retmode
         self.summaries = summaries
         super().__init__(format, error)
-
 
 class EFetchResult(SearchResult):
     def __init__(self, 
