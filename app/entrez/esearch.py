@@ -22,11 +22,12 @@ class ESearch:
     vm = lucene.getVMEnv()
     parser = PubmedQueryParser()
 
-    def __init__(self, term: str, retstart: int, retmax: int, retmode: str, field: str, trecqid: str, trectag: str):
+    def __init__(self, term: str, retstart: int, retmax: int, retmode: str, rettype: str, field: str, trecqid: str, trectag: str):
         self.term = term
         self.retstart = retstart
         self.retmax = retmax
         self.retmode = retmode
+        self.rettype = rettype
         self.field = field
         self.trecqid = trecqid
         self.trectag = trectag
@@ -67,8 +68,7 @@ class ESearch:
         formatted_query = self.parser.format(ast)
 
         total_count, id_list = self._idlist(formatted_query, self.retstart, self.retmax)
-
-        return sr.ESearchResult(
+        result = sr.ESearchResult(
             retmode=self.retmode,
             count=str(total_count),
             retmax=str(self.retmax),
@@ -80,10 +80,11 @@ class ESearch:
             trectag=self.trectag
         )
 
+        return result.return_count() if self.rettype == "count" else result
 
     
     # -----------------------
-    # --- ESummary Helper ---
+    # --- ESearch Helper ---
     # -----------------------
 
     # @lru_cache(maxsize=64)

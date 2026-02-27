@@ -34,6 +34,7 @@ if ORBIT_PUBMED_SERVICE is not None:
         retstart: int = Query(default="0", description="the start index for UIDs (default=0)"),
         retmax: int = Query(default="20", description="the end index for UIDs (default=20)"), 
         retmode: str = Query(default="xml", description="Return format xml or json (default=xml)", openapi_examples={"xml": {"value": "xml"},"json": {"value": "json"},"trec": {"value": "trec"}}),
+        rettype: str = Query(default="uilist", description="Return standard XML output including uilist (default=uilist) or just 'Count' tag (count)"),
         field: str = Query(default=None, description="Limitation to certain Entrez fields"), 
         db: str = Query(default="pubmed", description="Database to search"),
         trecqid: str = Query(default="0", description="When returning a TREC run, the qid field."),
@@ -47,7 +48,7 @@ if ORBIT_PUBMED_SERVICE is not None:
         if term is None:
             return sr.SearchResult(error="Empty term and query_key - nothing todo", retmode=retmode)
 
-        esearch = ESearch(term=term, retstart=retstart, retmax=retmax, retmode=retmode, field=field, trecqid=trecqid, trectag=trectag)
+        esearch = ESearch(term=term, retstart=retstart, retmax=retmax, retmode=retmode, rettype=rettype, field=field, trecqid=trecqid, trectag=trectag)
         return esearch.search()
 
     @app.get("/entrez/eutils/efetch.fcgi", tags=["PubMed Entrez"])
