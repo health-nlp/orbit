@@ -70,6 +70,7 @@ class EFetch:
                 
                 return sr.EFetchResult(articles=article_data, retmode=self.retmode)
             except Exception as e: 
+                raise e
                 return sr.EFetchResult(articles=[], retmode=self.retmode, error=str(e))
 
 

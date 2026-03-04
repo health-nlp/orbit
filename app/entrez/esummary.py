@@ -66,36 +66,12 @@ class ESummary:
 
                 with AdHocExperiment(indexer, page_start=self.retstart, page_size=self.retmax) as ex: 
                     articles: List[PubmedArticle] = ex.indexer.search(query=query, n_hits=len(uid_list))
+                    articles_data = [a.fields for a in articles]
 
-                    header = """<?xml version="1.0" ?>
-<!DOCTYPE PubmedArticleSet PUBLIC "-//NLM//DTD PubMedArticle, 1st January 2025//EN" "https://dtd.nlm.nih.gov/ncbi/pubmed/out/pubmed_250101.dtd">
-"""
-
-                    root = ET.Element("eSummaryResult")
-                    for a in articles: 
-                        print("--- DEBUG DUMP START ---")
-                        print(a.fields) 
-                        print("--- DEBUG DUMP END ---")
-                        docsum = ET.SubElement(root, "DocSum")
-
-                        doc_id = ET.SubElement(docsum, "Id")
-                        doc_id.text = a["id"]
-                        doc_title = ET.SubElement(docsum, "Title")
-                        doc_title.text = a["title"]
-                        
-                        doc_pubtype_list = ET.SubElement(docsum, "PubTypeList")
-                        for pubtype in a.fields["publication_type"]:
-                            publication_type = ET.SubElement(doc_pubtype_list, "PubType")
-                            publication_type.text = str(pubtype)
-                    
-
-                    #summary = header + ET.tostring(root, encoding="unicode"), 
-                    return Response(header + ET.tostring(root, encoding="unicode"),media_type="application/xml")
-                    #return sr.ESummaryResult(retstart=self.retstart,retmax=self.retmax,retmode=self.retmode,summaries=summary)
-
+                    return sr.ESummaryResult(retmode=self.retmode, summaries=articles_data)
             except Exception as e: 
                 raise e
-                return sr.SearchResult(retmode=self.retmode, error=str(e))
+                return sr.ESummaryResult(retmode=self.retmode, error=str(e))
 
     # -----------------------
     # --- ESummary Helper ---

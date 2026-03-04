@@ -2,10 +2,11 @@ import json
 from typing import Any, List
 import xml.etree.ElementTree as ET
 from fastapi import Response
+from datetime import datetime
 
 excluded = ["error", "media_type", "content", "status_code", "background", "body", "raw_headers", "retmode", "trecqid", "trectag", "translationset"]
 HEADER = """<?xml version="1.0" ?>
-        <!DOCTYPE PubmedArticleSet PUBLIC "-//NLM//DTD PubMedArticle, 1st January 2025//EN" "https://dtd.nlm.nih.gov/ncbi/pubmed/out/pubmed_250101.dtd">
+         <!DOCTYPE PubmedArticleSet PUBLIC "-//NLM//DTD PubMedArticle, 1st January 2025//EN" "https://dtd.nlm.nih.gov/ncbi/pubmed/out/pubmed_250101.dtd">
          """
 
 class SearchResult(Response): 
@@ -26,7 +27,6 @@ class SearchResult(Response):
 
     def to_json(self):
         class_name = self.__class__.__name__.lower().replace("result","")
-
         data = {"header": self.get_header(class_name)}
 
         if self.error: 
@@ -35,7 +35,7 @@ class SearchResult(Response):
             result_content = {k: v for k, v in self.__dict__.items() if k not in excluded}
             data[f"{class_name}"] = result_content
 
-        return json.dumps(data)
+        return json.dumps(data, default=lambda o: o.isoformat() if isinstance(o, datetime) else str(o))
 
     def to_xml(self): 
         substitutions = {
@@ -160,17 +160,41 @@ class ESearchResult(SearchResult):
 
 class ESummaryResult(SearchResult): 
     def __init__(self, 
-                 retstart: str,
-                 retmax: str, 
                  retmode: str,  
                  summaries: list,
                  error = None):
-        self.retstart = retstart
-        self.retmax = retmax
         self.retmode = retmode
         self.summaries = summaries
-        super().__init__(format, error)
+        super().__init__(retmode, error)
 
+    def to_xml(self):
+        root = ET.Element("eSummaryResult")
+
+        if self.error: 
+            ET.SubElement(root, "ERROR").text = str(self.error)
+            return self._finalize_xml(root)
+
+        for a in self.summaries: 
+            docsum = ET.SubElement(root, "DocSum")
+
+            doc_id = ET.SubElement(docsum, "Id")
+            doc_id.text = a.get("id", "N/A")
+
+            doc_title = ET.SubElement(docsum, "Title")
+            doc_title.text = a.get("title", "No Title")
+
+            pub_types = a.get("publication_type", [])
+            doc_pubtype_list = ET.SubElement(docsum, "PubTypeList")
+            for pubtype in a.get("publication_type"):
+                publication_type = ET.SubElement(doc_pubtype_list, "PubType")
+                publication_type.text = str(pubtype)
+            
+        return self._finalize_xml(root)
+
+    def _finalize_xml(self, root):
+        return HEADER+ET.tostring(root, encoding="unicode")
+
+# TODO fix root while returning to_xml() -> "eFetchResult" instead of "PubmedArticleSet"
 class EFetchResult(SearchResult):
     def __init__(self, 
                 articles: List[dict], 
@@ -225,6 +249,8 @@ class EFetchResult(SearchResult):
             output.append(f"Abstract: {abstract}\n")
             output.append(f"DOI: {date}")
             output.append(f"PMID: {pmid}")
+
+            output.append("-".repeat(30))
 
         return "\n".join(output)
 
