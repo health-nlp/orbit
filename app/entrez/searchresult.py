@@ -194,7 +194,6 @@ class ESummaryResult(SearchResult):
     def _finalize_xml(self, root):
         return HEADER+ET.tostring(root, encoding="unicode")
 
-# TODO fix root while returning to_xml() -> "eFetchResult" instead of "PubmedArticleSet"
 class EFetchResult(SearchResult):
     def __init__(self, 
                 articles: List[dict], 
@@ -205,15 +204,15 @@ class EFetchResult(SearchResult):
 
     
     def to_xml(self): 
+        root = ET.Element("eFetchResult")
         if self.error:
-            root = ET.Element("eFetchResult")
             ET.SubElement(root, "ERROR").text = str(self.error)
             return self._finalize_xml(root)
 
-        root = ET.Element("PubmedArticleSet")
+        pubmed_art_set = ET.SubElement(root, "PubmedArticleSet")
         for data in self.articles: 
-            pubmed_article = ET.SubElement(root, "PubmedArticle")
-            medline_citation = ET.SubElement(pubmed_article, "MedlineCitaiton")
+            pubmed_article = ET.SubElement(pubmed_art_set, "PubmedArticle")
+            medline_citation = ET.SubElement(pubmed_article, "MedlineCitation")
             pmid = ET.SubElement(medline_citation, "PMID", attrib={"Status": "MEDLINE", "Owner": "NLM", "IndexingMethod": "Automated"})
             pmid.text = data["id"]
 
