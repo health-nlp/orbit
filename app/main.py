@@ -79,7 +79,7 @@ if ORBIT_PUBMED_SERVICE is not None:
     @app.get("/entrez/eutils/efetch.fcgi", tags=["PubMed Entrez"])
     async def efetch(
         id: str = Query(default=..., description="Comma seperated list of UIDs (e.g. '12345678', '90123456')"),
-        retmode: str = Query(default="json", description="Return format (json is default)", openapi_examples={"xml": {"value": "xml"}, "txt": {"value": "txt"}}),
+        retmode: str = Query(default="xml", description="Return format (xml is default)", openapi_examples={"xml": {"value": "xml"}, "txt": {"value": "txt"}}),
         retstart: int = Query(default=None, description="optional start-index of given id-list"),
         retmax: int = Query(default=None, descrition="optional start-index of given id-list")
     ):

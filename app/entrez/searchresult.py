@@ -16,9 +16,13 @@ class SearchResult(Response):
             self.media_type = "application/xml"
         if retmode == "json":
             self.media_type = "application/json"
+        if retmode == "txt":
+            self.media_type = "text/plain"
+
         self.error = error
         self.content = self.render(None)
-        super().__init__(None, 200, None, self.media_type, None)
+        super().__init__(self.content, 200, None, self.media_type, None)
+    
 
     def to_json(self):
         class_name = self.__class__.__name__.lower().replace("result","")
@@ -89,13 +93,21 @@ class SearchResult(Response):
     def to_xml_response(self):
         return Response(self.to_xml(), media_type="application/xml")
 
+    def to_txt(self):
+        """Fallback method, if subclass does not implement to_txt"""
+        return "Text output is not implemented for this endpoint"
+
     def render(self, content: Any) -> bytes:
         if self.retmode == "xml":
             return bytes(self.to_xml(), encoding="utf-8")
         if self.retmode == "json":
             return bytes(self.to_json(), encoding="utf-8")
+        if self.retmode == "txt": 
+            return bytes(self.to_txt(), encoding="utf-8")
         if self.__class__.__name__ == "ESearchResult" and self.retmode == "trec":
             return bytes(self.to_trec(), encoding="utf-8")
+    
+        
         return bytes(self.to_json(), encoding="utf-8")
 
     def get_header(self, search_type):
@@ -196,6 +208,25 @@ class EFetchResult(SearchResult):
             self._add_list_xml(keyword_list, "Keyword", data["keyword_list"])
 
         return self._finalize_xml(root)
+
+    def to_txt(self):
+        if self.error: 
+            return f"ERROR: {self.error}"
+
+        output = []
+        
+        for data in self.articles: 
+            pmid = data.get("id", "N/A")
+            title = data.get("title", "No Title")
+            date = data.get("date", "No Date")
+            abstract = data.get("abstract", "No Abstract")
+
+            output.append(f"Title: {title}\n")
+            output.append(f"Abstract: {abstract}\n")
+            output.append(f"DOI: {date}")
+            output.append(f"PMID: {pmid}")
+
+        return "\n".join(output)
 
 
     def _add_date_xml(self, parent, raw_date): 
