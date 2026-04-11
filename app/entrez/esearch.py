@@ -18,15 +18,16 @@ class ESearch:
     and returns matching document IDs with paging support (retstart/retmax)
     """
 
-    LOCAL_INDEX_PATH = os.getenv("LOCAL_INDEX_PATH", "/app/index")
+    LOCAL_INDEX_PATH = os.getenv("LOCAL_INDEX_PATH", "app/index-pubmed")
     vm = lucene.getVMEnv()
     parser = PubmedQueryParser()
 
-    def __init__(self, term: str, retstart: int, retmax: int, retmode: str, field: str, trecqid: str, trectag: str):
+    def __init__(self, term: str, retstart: int, retmax: int, retmode: str, rettype: str, field: str, trecqid: str, trectag: str):
         self.term = term
         self.retstart = retstart
         self.retmax = retmax
         self.retmode = retmode
+        self.rettype = rettype
         self.field = field
         self.trecqid = trecqid
         self.trectag = trectag
@@ -59,12 +60,15 @@ class ESearch:
 
         # Parse and prepare query (will raise on malformed query)
         ast = self.parser.parse_ast(self.term)
+
+        if self.field: 
+            self.set_field_recursively(ast, self.field)
+            
         self.parser.parse_lucene(self.term)
         formatted_query = self.parser.format(ast)
 
         total_count, id_list = self._idlist(formatted_query, self.retstart, self.retmax)
-
-        return sr.ESearchResult(
+        result = sr.ESearchResult(
             retmode=self.retmode,
             count=str(total_count),
             retmax=str(self.retmax),
@@ -76,10 +80,11 @@ class ESearch:
             trectag=self.trectag
         )
 
+        return result.return_count() if self.rettype == "count" else result
 
     
     # -----------------------
-    # --- ESummary Helper ---
+    # --- ESearch Helper ---
     # -----------------------
 
     # @lru_cache(maxsize=64)
@@ -102,7 +107,7 @@ class ESearch:
                 indexer = PubmedIndexer(index_path=ORBIT_PUBMED_INDEX_PATH)    
                 with AdHocExperiment(indexer, raw_query=query ,page_start=retstart, page_size=retmax) as ex:
                     results = ex.run
-                    ids = [str(res.doc_id) for res in results]
+                    ids = list(set([str(res.doc_id) for res in sorted(results, key=lambda x: x.score, reverse=True)]))
                     total_count = next(ex.count())
                     return (total_count, ids)
             except Exception as e:

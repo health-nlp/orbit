@@ -42,7 +42,8 @@ if [ "$RUN_MODE" = "test" ]; then
   #head -n 1 full_tmp.jsonl > pubmed-processed.jsonl
   cat full_tmp.jsonl > pubmed-processed.jsonl
   rm full_tmp.jsonl
-elif [ -f pubmed-processed.jsonl ]; then
+elif [ -f pubmed-processed.jsonl && ! -s pubmed-processed.jsonl ]; then
+  echo "Processed file exists, skipping download..."
   break
 else
   echo "FULL MODE active: downloading full datase from baseline..."
