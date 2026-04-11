@@ -5,6 +5,7 @@ from fastapi import FastAPI, Query
 from fastapi.responses import RedirectResponse
 from pybool_ir.query.pubmed.parser import PubmedQueryParser
 
+from pubmed_updater import PubMedUpdater
 import entrez.searchresult as sr
 from entrez.esearch import ESearch 
 from entrez.efetch import EFetch
@@ -19,14 +20,29 @@ from ctgov.studies import searchareas as get_ctgov_searchareas
 ORBIT_VERSION = "0.1.0"
 app = FastAPI(title="Orbit")
 parser = PubmedQueryParser()
+updater_instance = PubMedUpdater()
 ORBIT_PUBMED_SERVICE = os.getenv("ORBIT_PUBMED_SERVICE", None)
 ORBIT_CTGOV_SERVICE = os.getenv("ORBIT_CTGOV_SERVICE", None)
+
 
 @app.get("/", include_in_schema=False)
 async def docs_redirect():
     return RedirectResponse(url="/docs")
 
 if ORBIT_PUBMED_SERVICE is not None:
+
+
+    @app.get("pubmed_updater", tags=["PubMed Updates"])
+    async def set_update_frequency(
+        frequency: str = Query(..., description="Possible frequencies: 'daily', 'weekly', 'monthly', 'off'")
+    ):
+
+        try: 
+            message = updater_instance.set_frequency(frequency)
+            return {"status": "success", "message": message}
+        except ValueError as e: 
+            raise f"An error occurred during update: {e}"
+
 
     @app.get("/entrez/eutils/esearch.fcgi", tags=["PubMed Entrez"])
     async def esearch(
