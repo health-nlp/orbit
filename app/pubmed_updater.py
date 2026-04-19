@@ -3,7 +3,7 @@ import subprocess
 
 from fastapi import FastAPI, Query, HTTPException
 from fastapi.responses import RedirectResponse
-from pybool_ir.query.pubmed.paraser import PubmedQueryParser
+from pybool_ir.query.pubmed.parser import PubmedQueryParser
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
