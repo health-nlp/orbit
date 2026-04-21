@@ -23,6 +23,7 @@ services:
       MODE: api
       ORBIT_CTGOV_INDEX_PATH: /app/index-ctgov
       ORBIT_CTGOV_SERVICE: 1
+      ORBIT_PORT: "${ORBIT_PORT}"
     depends_on:
       orbit_ctgov_data_builder:
         condition: service_completed_successfully

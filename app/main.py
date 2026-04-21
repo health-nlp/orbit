@@ -32,7 +32,7 @@ async def docs_redirect():
 if ORBIT_PUBMED_SERVICE is not None:
 
 
-    @app.get("pubmed_updater", tags=["PubMed Updates"])
+    @app.get("/pubmed_updater", tags=["PubMed Updates"])
     async def set_update_frequency(
         frequency: str = Query(..., description="Possible frequencies: 'daily', 'weekly', 'monthly', 'off'")
     ):

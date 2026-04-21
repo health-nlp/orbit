@@ -41,6 +41,7 @@ services:
       ORBIT_CTGOV_INDEX_PATH: /app/index-ctgov
       ORBIT_PUBMED_SERVICE: 1
       ORBIT_CTGOV_SERVICE: 1
+      ORBIT_PORT: "${ORBIT_PORT}"
     depends_on:
       orbit_pubmed_data_builder:
         condition: service_completed_successfully
