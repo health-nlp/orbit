@@ -1,6 +1,6 @@
 import os
 
-from fastapi import FastAPI, Query
+from fastapi import FastAPI, Query, HTTPException
 from fastapi.responses import RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pybool_ir.query.pubmed.parser import PubmedQueryParser
@@ -18,7 +18,7 @@ from ctgov.studies import metadata as get_ctgov_metadata
 from ctgov.studies import searchareas as get_ctgov_searchareas
 
 ORBIT_VERSION = "0.1.0"
-app = FastAPI(title="Orbit")
+app = FastAPI(title="Orbit", servers=[{"url": "/", "description": "Local Server"}])
 parser = PubmedQueryParser()
 updater_instance = PubMedUpdater()
 ORBIT_PUBMED_SERVICE = os.getenv("ORBIT_PUBMED_SERVICE", None)
@@ -48,7 +48,7 @@ if ORBIT_PUBMED_SERVICE is not None:
             message = updater_instance.set_frequency(frequency)
             return {"status": "success", "message": message}
         except ValueError as e: 
-            raise f"An error occurred during update: {e}"
+            raise HTTPException(status_code=500, detail=str(e))
 
 
     @app.get("/entrez/eutils/esearch.fcgi", tags=["PubMed Entrez"])
