@@ -12,7 +12,7 @@ services:
       - ./index-pubmed:/app/index-pubmed
       - ./baseline-pubmed:/app/baseline-pubmed
       - ./pubmed-processed.jsonl:/app/pubmed-processed.jsonl
-    exclude_from_hc: true      
+    #exclude_from_hc: true      
     restart: on-failure
 
   orbit_api:
