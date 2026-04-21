@@ -1,8 +1,8 @@
 import os
 
 from fastapi import FastAPI, Query
-
 from fastapi.responses import RedirectResponse
+from fastapi.middleware.cors import CORSMiddleware
 from pybool_ir.query.pubmed.parser import PubmedQueryParser
 
 from pubmed_updater import PubMedUpdater
@@ -25,13 +25,20 @@ ORBIT_PUBMED_SERVICE = os.getenv("ORBIT_PUBMED_SERVICE", None)
 ORBIT_CTGOV_SERVICE = os.getenv("ORBIT_CTGOV_SERVICE", None)
 
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Erlaubt deinem Browser, von überall zuzugreifen
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
 @app.get("/", include_in_schema=False)
 async def docs_redirect():
     return RedirectResponse(url="/docs")
 
 if ORBIT_PUBMED_SERVICE is not None:
-
-
     @app.get("/pubmed_updater", tags=["PubMed Updates"])
     async def set_update_frequency(
         frequency: str = Query(..., description="Possible frequencies: 'daily', 'weekly', 'monthly', 'off'")
