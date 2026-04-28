@@ -49,7 +49,11 @@ if ORBIT_PUBMED_SERVICE is not None:
             return {"status": "success", "message": message}
         except ValueError as e: 
             raise HTTPException(status_code=500, detail=str(e))
-
+        
+    @app.get("/update/status", tags=["PubMed Updates"])
+    async def get_update_status():
+        jobs=updater_instance.scheduler.get_jobs()
+        return {"active_jobs": len(jobs), "next_run_times": [str(job.next_run_time) for job in jobs], "is_running": updater_instance.scheduler.running}
 
     @app.get("/entrez/eutils/esearch.fcgi", tags=["PubMed Entrez"])
     async def esearch(
