@@ -178,30 +178,104 @@ if ORBIT_PUBMED_SERVICE is not None:
 
 if ORBIT_CTGOV_SERVICE is not None:
     
-    @app.get("/ct/api/v2/version", tags=["ClinicalTrials.gov"])
+    @app.get("/ct/api/v2/version", 
+            tags=["ClinicalTrials.gov"], 
+            summary="Orbit Version")
     async def ctgov_version():
+        """
+        # API Version Endpoint
+        
+        ## Function
+        Returns version information about the Orbit API service.
+        
+        """
         return {
             "apiVersion": f"2.0.5-(orbit-{ORBIT_VERSION})"
         }
 
-    @app.get("/ct/api/v2/studies", tags=["ClinicalTrials.gov"])
+    @app.get("/ct/api/v2/studies", tags=["ClinicalTrials.gov"], summary="Studies")
     async def ctgov_studies(
         rformat: str = Query(default="json", description="how studies should be returned", alias="format", openapi_examples=["json","csv"]),
-        query_term: str = Query(default=..., description="Other terms query in Essie expression syntax.", alias="query.term"),
+        query_term: str = Query(default=..., description="other terms query in Essie expression syntax.", alias="query.term"),
         page_start: int = Query(default="0", description="the start index for studies)", alias="pageStart"),
         page_size: int = Query(default="20", description="the end index for studies", alias="pageSize"), 
     ):
+        """
+        # Studies
+        
+        ## Function
+        Returns a list of clinical trials that match the provided search criteria with support for pagination.
+        
+        ## Required Parameters
+        **query.term:** The search query in Essie expression syntax. Must be URL encoded.
+
+        
+        ## Optional Parameters
+        **format:** Output format - 'json' (default) or 'csv'.
+        
+        **pageStart:** Starting index for pagination (default=0).
+        
+        **pageSize:** Number of results per page (default=20, maximum=100).
+
+        ## Query Syntax (Essie)
+        The Essie query syntax supports:
+        - **AND**: Both terms must appear (default)
+        - **OR**: Either term can appear
+        - **NOT**: Exclude term
+        - **Phrases**: Use quotes for exact phrases
+        - **Fields**: Use field:name syntax (e.g., AREA[Condition]cancer)
+        
+        ## Query Examples
+        - AREA[Condition]cancer AND AREA[InterventionName]immunotherapy
+        - AREA[LeadSponsorName]NIH AND AREA[Phase]PHASE3
+        - AREA[Location]Germany AND RECR[Recruitment]RECRUITING
+        - "breast cancer" AND AREA[OverallStatus]RECRUITING
+
+        ## Example Request
+        ```bash
+        GET /ct/api/v2/studies?query.term=breast%20cancer
+        ```
+        """
         return get_ctgov_studies(rformat, query_term, page_start, page_size)
 
-    @app.get("/ct/api/v2/studies/metadata", tags=["ClinicalTrials.gov"])
-    async def ctgov_studies_metadata():
-        return get_ctgov_metadata()
 
-    @app.get("/ct/api/v2/studies/search-areas", tags=["ClinicalTrials.gov"])
-    async def ctgov_studies_search_areas():
-        return get_ctgov_searchareas()
-
-    @app.get("/ct/api/v2/studies/{nctId}", tags=["ClinicalTrials.gov"])
+    @app.get("/ct/api/v2/studies/{nctId}", tags=["ClinicalTrials.gov"], summary="Single Study")
     async def ctgov_study(nctId: str):
+        """
+        # Single Study
+        
+        ## Function
+        Returns the complete record for a single clinical trial identified by its NCT (National Clinical Trial) ID.
+        
+        ## Required Parameters
+        **nctId:** The NCT ID of the clinical trial (e.g., 'NCT01234567'). Must be URL encoded if passed directly.
+
+        ## Example
+        ```bash
+        GET /ct/api/v2/studies/NCT01234567
+        ```
+
+        """
         return get_ctgov_study("json", nctId)
 
+
+    @app.get("/ct/api/v2/studies/metadata", tags=["ClinicalTrials.gov"], summary="Studies Metadata")
+    async def ctgov_studies_metadata():
+        """
+        # Metadata
+        
+        ## Function
+        Returns information about the structure of the clinical trial data, including available fields, their types, and descriptions.
+        """
+        return get_ctgov_metadata()
+
+    @app.get("/ct/api/v2/studies/search-areas", tags=["ClinicalTrials.gov"], summary="Studies Search Areas")
+    async def ctgov_studies_search_areas():
+        """
+        # Search Areas
+        
+        ## Function
+        Returns information about all searchable areas (fields) in the ClinicalTrials.gov database.
+        
+        """
+        return get_ctgov_searchareas()
