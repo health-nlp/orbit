@@ -13,11 +13,11 @@ services:
       - ./baseline-ctgov:/app/baseline-ctgov    
     restart: on-failure
 
-  orbit_api_ctgov:
+  orbit_api:
     platform: linux/amd64
     build: .
     image: orbit:latest
-    container_name: orbit_api
+    container_name: orbit_api_ctgov
     environment:
       MODE: api
       ORBIT_CTGOV_INDEX_PATH: /app/index-ctgov
