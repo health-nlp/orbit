@@ -10,11 +10,10 @@ services:
       ORBIT_CTGOV_BASELINE_PATH: /app/baseline-ctgov
     volumes:
       - ./index-ctgov:/app/index-ctgov
-      - ./baseline-ctgov:/app/baseline-ctgov
-    #exclude_from_hc: true      
+      - ./baseline-ctgov:/app/baseline-ctgov    
     restart: on-failure
 
-  orbit_api:
+  orbit_api_ctgov:
     platform: linux/amd64
     build: .
     image: orbit:latest
