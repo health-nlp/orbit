@@ -74,7 +74,7 @@ class PubMedUpdater:
 
         freq = frequency.lower()
         if freq == "minutely":
-            trigger = CronTrigger(minute="*/10")
+            trigger = CronTrigger(minute="*/50")
         elif freq == "daily": 
             trigger = CronTrigger(hour=2, minute=0)
         elif freq == "weekly": 
