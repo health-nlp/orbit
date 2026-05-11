@@ -41,7 +41,7 @@ class PubMedUpdater:
             pass
 
         pmids_to_delete = []
-        with open(jsoln_path, "r") as f:
+        with open(jsonl_path, "r") as f:
             for line in f:
                 try:    
                     data = json.loads(line)
