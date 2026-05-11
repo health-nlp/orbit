@@ -1,6 +1,7 @@
 import os
 import subprocess
 import json
+import lucene
 
 from fastapi import FastAPI, Query, HTTPException
 from fastapi.responses import RedirectResponse
@@ -34,8 +35,13 @@ class PubMedUpdater:
         if not os.path.exists(jsonl_path):
             return
 
+        try: 
+            lucene.getVMEnv().attachCurrentThread()
+        except AttributeError:
+            pass
+
         pmids_to_delete = []
-        with open(jsonl_path, "r") as f:
+        with open(jsoln_path, "r") as f:
             for line in f:
                 try:    
                     data = json.loads(line)
