@@ -65,7 +65,7 @@ class PubMedUpdater:
             subprocess.run(["uv", "run", "-m", "pybool_ir.cli", "pubmed", "process", "-b", self.update_target, "-o", "update_tmp.jsonl"], check=True)
             self._remove_duplicates("update_tmp.jsonl")
 
-            subprocess.run(["uv", "run", "-m", "pybool_ir.cli", "pubmed", "index", "-b", "update_tmp.jsonl", "-i", self.index_path, "--append"], check=True)
+            subprocess.run(["uv", "run", "-m", "pybool_ir.cli", "pubmed", "index", "-b", "update_tmp.jsonl", "-i", self.index_path], check=True)
 
             if os.path.exists("update_tmp.jsonl"): 
                 os.remove("update_tmp.jsonl")
