@@ -223,7 +223,7 @@ if ORBIT_PUBMED_SERVICE is not None:
         esummary = ESummary(id=id, retmode=retmode, retstart=retstart, retmax=retmax)
         return esummary.summarize()
 
-    @app.get("/entrez/eutils/info.fcgi", tags=["PubMed Entrez"])
+    @app.get("/entrez/eutils/einfo.fcgi", tags=["PubMed Entrez"])
     async def info():
         """
         # EInfo-like endpoint
