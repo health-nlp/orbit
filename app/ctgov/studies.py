@@ -34,7 +34,7 @@ def study(rformat: str, nct_id: str) -> SearchResult:
                 vm.attachCurrentThread()
 
             with ClinicalTrialsGovIndexer(index_path=ORBIT_CTGOV_INDEX_PATH) as ix:
-                hits = ix.index.search(f'nct_id:{nct_id}')
+                hits = ix.index.search(f'nct_id:{nct_id.strip().upper()}')
 
                 if len(hits) == 0:
                     return Response(content="Parameter `nctId` has incorrect format or NCT number not found", media_type="text/plain")
