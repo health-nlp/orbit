@@ -78,16 +78,16 @@ def studies(rformat: str, query_term: str, page_start: int, page_size: int) -> S
                 if page_size > hitsize:
                     page_size = hitsize
                 
-                page_start = page_start
-                if page_start > hitsize:
-                    page_start = -1
+                #page_start = page_start
+                #if page_start > hitsize:
+                #    page_start = -1
                 
-                page_end = -1
-                if (page_start+page_size) < hitsize:
-                    page_end = page_start+page_size     
+                #page_end = -1
+                #if (page_start+page_size) < hitsize:
+                #    page_end = page_start+page_size     
                 
                 studies = []
-                for hit in hits[page_start:page_end]:
+                for hit in hits[page_start:page_start + page_size]:
                     # d = hit.dict("nctid","brief_title","overall_status", "has_results")
                     d = ClinicalTrialsGovArticle.from_hit(hit)
                     studies.append({
