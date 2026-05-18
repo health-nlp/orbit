@@ -10,10 +10,11 @@ from . import searchresult as sr
 from . import ORBIT_PUBMED_INDEX_PATH
 from . import _lock
 
+
 class ESearch:
     """
     Implements the Pubmed-like ESearch endpoint
-    
+
     Parses a boolean query, executes it against the Lucene index
     and returns matching document IDs with paging support (retstart/retmax)
     """
@@ -31,7 +32,7 @@ class ESearch:
         self.field = field
         self.trecqid = trecqid
         self.trectag = trectag
-    
+
     """
     Initialization of an ESearch request.
 
@@ -92,7 +93,6 @@ class ESearch:
 
         return result.return_count() if self.rettype == "count" else result
 
-    
     # -----------------------
     # --- ESearch Helper ---
     # -----------------------
@@ -114,8 +114,8 @@ class ESearch:
                 if not self.vm.isCurrentThreadAttached():
                     self.vm.attachCurrentThread()
 
-               try: 
-                   searcher_class = lucene.JavaError.__get_java_class__("org.apache.lucene.search.IndexSearcher")
+                try: 
+                    searcher_class = lucene.JavaError.__get_java_class__("org.apache.lucene.search.IndexSearcher")
                     searcher_class.setMaxClauseCount(8192)
                 except Exception:
                     try:
@@ -125,7 +125,7 @@ class ESearch:
                         print(f"DEBUG: Limit konnte nicht gesetzt werden: {e}")
 
                 indexer = PubmedIndexer(index_path=ORBIT_PUBMED_INDEX_PATH)    
-                with AdHocExperiment(indexer, raw_query=query ,page_start=retstart, page_size=retmax) as ex:
+                with AdHocExperiment(indexer, raw_query=query, page_start=retstart, page_size=retmax) as ex:
                     results = ex.run
                     ids = list(set([str(res.doc_id) for res in sorted(results, key=lambda x: x.score, reverse=True)]))
                     total_count = next(ex.count())
@@ -133,7 +133,6 @@ class ESearch:
             except Exception as e:
                 print(f"DEBUG Fehler: {e}")
                 raise e
-
 
     def set_field_recursively(self, node, new_field):
         """
