@@ -33,7 +33,18 @@ def study(rformat: str, nct_id: str) -> SearchResult:
             if not vm.isCurrentThreadAttached():
                 vm.attachCurrentThread()
 
-            with ClinicalTrialsGovIndexer(index_path=ORBIT_CTGOV_INDEX_PATH) as ix:
+            with ClinicalTrialsGovIndexer(index_path=ORBIT_CTGOV_INDEX_PATH) as ix:#
+
+                # --- DEBUGGING START ---
+                print(f"DEBUG: Index geladen von {ORBIT_CTGOV_INDEX_PATH}")
+                print(f"DEBUG: Anzahl der Dokumente im Index: {ix.index.count()}")
+                
+                safe_nct_id = nct_id.strip().upper()
+                query_string = f'nct_id:{safe_nct_id}'
+                print(f"DEBUG: Führe Lucene-Suche aus: {query_string}")
+                # --- DEBUGGING END ---
+
+                
                 hits = ix.index.search(f'nct_id:{nct_id.strip().upper()}')
 
                 if len(hits) == 0:
