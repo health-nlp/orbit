@@ -58,6 +58,11 @@ class ESearch:
         if not self.vm.isCurrentThreadAttached():
             self.vm.attachCurrentThread()
 
+        try: 
+            lucene.IndexSearcher.setMaxClauseCount(8192)
+        except AttributeError:
+            lucene.BooleanQuery.setMaxClauseCount(8192)
+
         # Parse and prepare query (will raise on malformed query)
         ast = self.parser.parse_ast(self.term)
 
@@ -103,6 +108,11 @@ class ESearch:
             try:
                 if not self.vm.isCurrentThreadAttached():
                     self.vm.attachCurrentThread()
+
+                try: 
+                    lucene.IndexSearcher.setMaxClauseCount(8192)
+                except AttributeError:
+                    lucene.BooleanQuery.setMaxClauseCount(8192)
 
                 indexer = PubmedIndexer(index_path=ORBIT_PUBMED_INDEX_PATH)    
                 with AdHocExperiment(indexer, raw_query=query ,page_start=retstart, page_size=retmax) as ex:
