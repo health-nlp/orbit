@@ -36,28 +36,28 @@ def study(rformat: str, nct_id: str) -> SearchResult:
             with ClinicalTrialsGovIndexer(index_path=ORBIT_CTGOV_INDEX_PATH) as ix:
                 hits = ix.index.search(f'nct_id:{nct_id}')
 
-            if len(hits) == 0:
-                return Response(content="Parameter `nctId` has incorrect format or NCT number not found", media_type="text/plain")
-
-            for hit in hits:
-                d = ClinicalTrialsGovArticle.from_hit(hit)
-                return SearchResult(rformat,
-                {
-                    "protocolSection": {
-                        "identificationModule": {
-                            "nctId": d["nct_id"][0],
-                            "briefTitle": d["brief_title"][0],
-                            "officialTitle": d["official_title"][0]
+                if len(hits) == 0:
+                    return Response(content="Parameter `nctId` has incorrect format or NCT number not found", media_type="text/plain")
+    
+                for hit in hits:
+                    d = ClinicalTrialsGovArticle.from_hit(hit)
+                    return SearchResult(rformat,
+                    {
+                        "protocolSection": {
+                            "identificationModule": {
+                                "nctId": d["nct_id"][0],
+                                "briefTitle": d["brief_title"][0],
+                                "officialTitle": d["official_title"][0]
+                            },
+                            "statusModule": {
+                                "overallStatus": d["overall_status"][0]
+                            },
+                            "descriptionModule": {
+                                "briefSummary": d["brief_summary"][0]
+                            }
                         },
-                        "statusModule": {
-                            "overallStatus": d["overall_status"][0]
-                        },
-                        "descriptionModule": {
-                            "briefSummary": d["brief_summary"][0]
-                        }
-                    },
-                    "hasResults": None
-                })
+                        "hasResults": None
+                    })
 
 
         except Exception as e:
