@@ -45,8 +45,9 @@ def study(rformat: str, nct_id: str) -> SearchResult:
                 # --- DEBUGGING END ---
 
                 
-                hits = ix.index.search(f'nct_id:{nct_id.strip().upper()}')
-
+                #hits = ix.index.search(f'nct_id:{nct_id.strip().upper()}')
+                hits = ix.index.search(ntct_id=nct_id.strip().upper())
+                
                 if len(hits) == 0:
                     return Response(content="Parameter `nctId` has incorrect format or NCT number not found", media_type="text/plain")
     
