@@ -59,9 +59,14 @@ class ESearch:
             self.vm.attachCurrentThread()
 
         try: 
-            lucene.IndexSearcher.setMaxClauseCount(8192)
-        except AttributeError:
-            lucene.BooleanQuery.setMaxClauseCount(8192)
+            searcher_class = lucene.JavaError.__get_java_class__("org.apache.lucene.search.IndexSearcher")
+            searcher_class.setMaxClauseCount(8192)
+        except Exception:
+            try:
+                query_class = lucene.JavaError.__get_java_class__("org.apache.lucene.search.BooleanQuery")
+                query_class.setMaxClauseCount(8192)
+            except Exception as e:
+                print(f"DEBUG: limit could not be set: {e}")
 
         # Parse and prepare query (will raise on malformed query)
         ast = self.parser.parse_ast(self.term)
@@ -109,10 +114,15 @@ class ESearch:
                 if not self.vm.isCurrentThreadAttached():
                     self.vm.attachCurrentThread()
 
-                try: 
-                    lucene.IndexSearcher.setMaxClauseCount(8192)
-                except AttributeError:
-                    lucene.BooleanQuery.setMaxClauseCount(8192)
+               try: 
+                   searcher_class = lucene.JavaError.__get_java_class__("org.apache.lucene.search.IndexSearcher")
+                    searcher_class.setMaxClauseCount(8192)
+                except Exception:
+                    try:
+                        query_class = lucene.JavaError.__get_java_class__("org.apache.lucene.search.BooleanQuery")
+                        query_class.setMaxClauseCount(8192)
+                    except Exception as e:
+                        print(f"DEBUG: Limit konnte nicht gesetzt werden: {e}")
 
                 indexer = PubmedIndexer(index_path=ORBIT_PUBMED_INDEX_PATH)    
                 with AdHocExperiment(indexer, raw_query=query ,page_start=retstart, page_size=retmax) as ex:
