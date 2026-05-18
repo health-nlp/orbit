@@ -24,7 +24,8 @@ services:
       MODE: api
       ORBIT_PUBMED_INDEX_PATH: /app/index-pubmed
       ORBIT_PUBMED_SERVICE: 1
-      # ORBIT_PUBMED_UPDATE_DISPLAY: 1
+      ORBIT_PUBMED_UPDATE_DISPLAY: 1
+      ORBIT_PUBMED_ONLY_UPDATE_STATUS: 1
       ORBIT_PORT: "${ORBIT_PORT}"
     depends_on:
       orbit_pubmed_data_builder:

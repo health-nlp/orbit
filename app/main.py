@@ -27,6 +27,7 @@ updater_instance = PubMedUpdater()
 ORBIT_PUBMED_SERVICE = os.getenv("ORBIT_PUBMED_SERVICE", None)
 ORBIT_CTGOV_SERVICE = os.getenv("ORBIT_CTGOV_SERVICE", None)
 ORBIT_PUBMED_UPDATE_DISPLAY = os.getenv("ORBIT_PUBMED_UPDATE_DISPLAY", None)
+ORBIT_PUBMED_ONLY_UPDATE_STATUS = os.getenv("ORBIT_PUBMED_ONLY_UPDATE_STATUS", None)
 
 
 app.add_middleware(
@@ -43,17 +44,15 @@ async def docs_redirect():
     return RedirectResponse(url="/docs")
 
 if ORBIT_PUBMED_SERVICE is not None:
-
     if ORBIT_PUBMED_UPDATE_DISPLAY is not None:
-        @app.get("/update", tags=["PubMed Updates"])
-        async def set_update_frequency(
-            frequency: str = Query(..., description="Possible frequencies: 'daily', 'weekly', 'monthly', 'off'")
-        ):
-            try:
-                message = updater_instance.set_frequency(frequency)
-                return {"status": "success", "message": message}
-            except ValueError as e:
-                raise HTTPException(status_code=500, detail=str(e))
+        if ORBIT_PUBMED_ONLY_UPDATE_STATUS is not None:
+            @app.get("/update", tags=["PubMed Updates"])
+            async def set_update_frequency(frequency: str = Query(..., description="Possible frequencies: 'daily', 'weekly', 'monthly', 'off'")):
+                try:
+                    message = updater_instance.set_frequency(frequency)
+                    return {"status": "success", "message": message}
+                except ValueError as e:
+                    raise HTTPException(status_code=500, detail=str(e))
 
         @app.get("/update/status", tags=["PubMed Updates"])
         async def get_update_status():
