@@ -1,6 +1,8 @@
 import lucene
 import os
 
+from org.apache.lucene.search import IndexSearcher
+
 from pybool_ir.experiments.retrieval import AdHocExperiment
 from pybool_ir.index.pubmed import PubmedIndexer
 from pybool_ir.query.pubmed.parser import PubmedQueryParser
@@ -58,13 +60,15 @@ class ESearch:
         if not self.vm.isCurrentThreadAttached():
             self.vm.attachCurrentThread()
 
+        IndexSearcher.setMaxClauseCount(65536)
+        
         # Parse and prepare query (will raise on malformed query)
         ast = self.parser.parse_ast(self.term)
 
         if self.field: 
             self.set_field_recursively(ast, self.field)
             
-        self.parser.parse_lucene(self.term)
+        # self.parser.parse_lucene(self.term)
         formatted_query = self.parser.format(ast)
 
         total_count, id_list = self._idlist(formatted_query, self.retstart, self.retmax)
