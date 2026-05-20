@@ -33,43 +33,31 @@ def study(rformat: str, nct_id: str) -> SearchResult:
             if not vm.isCurrentThreadAttached():
                 vm.attachCurrentThread()
 
-            with ClinicalTrialsGovIndexer(index_path=ORBIT_CTGOV_INDEX_PATH) as ix:#
+            with ClinicalTrialsGovIndexer(index_path=ORBIT_CTGOV_INDEX_PATH) as ix:
+                hits = ix.index.search(f'nct_id:{nct_id.upper()}')
 
-                # --- DEBUGGING START ---
-                print(f"DEBUG: Index geladen von {ORBIT_CTGOV_INDEX_PATH}")
-                print(f"DEBUG: Anzahl der Dokumente im Index: {ix.index.count()}")
-                
-                safe_nct_id = nct_id.strip().upper()
-                query_string = f'nct_id:{safe_nct_id}'
-                print(f"DEBUG: Führe Lucene-Suche aus: {query_string}")
-                # --- DEBUGGING END ---
+            if len(hits) == 0:
+                return Response(content="Parameter `nctId` has incorrect format or NCT number not found", media_type="text/plain")
 
-                
-                #hits = ix.index.search(f'nct_id:{nct_id.strip().upper()}')
-                hits = ix.index.search(ntct_id=nct_id.strip().upper())
-                
-                if len(hits) == 0:
-                    return Response(content="Parameter `nctId` has incorrect format or NCT number not found", media_type="text/plain")
-    
-                for hit in hits:
-                    d = ClinicalTrialsGovArticle.from_hit(hit)
-                    return SearchResult(rformat,
-                    {
-                        "protocolSection": {
-                            "identificationModule": {
-                                "nctId": d["nct_id"][0],
-                                "briefTitle": d["brief_title"][0],
-                                "officialTitle": d["official_title"][0]
-                            },
-                            "statusModule": {
-                                "overallStatus": d["overall_status"][0]
-                            },
-                            "descriptionModule": {
-                                "briefSummary": d["brief_summary"][0]
-                            }
+            for hit in hits:
+                d = ClinicalTrialsGovArticle.from_hit(hit)
+                return SearchResult(rformat,
+                {
+                    "protocolSection": {
+                        "identificationModule": {
+                            "nctId": d["nct_id"][0],
+                            "briefTitle": d["brief_title"][0],
+                            "officialTitle": d["official_title"][0]
                         },
-                        "hasResults": None
-                    })
+                        "statusModule": {
+                            "overallStatus": d["overall_status"][0]
+                        },
+                        "descriptionModule": {
+                            "briefSummary": d["brief_summary"][0]
+                        }
+                    },
+                    "hasResults": None
+                })
 
 
         except Exception as e:
@@ -85,40 +73,40 @@ def studies(rformat: str, query_term: str, page_start: int, page_size: int) -> S
             with ClinicalTrialsGovIndexer(index_path=ORBIT_CTGOV_INDEX_PATH) as ix:
                 lucene_query = parser.parse_lucene(query_term)
                 hits = ix.index.search(lucene_query)
-                page_size = page_size
-                hitsize = len(hits)
-                if page_size > hitsize:
-                    page_size = hitsize
-                
-                #page_start = page_start
-                #if page_start > hitsize:
-                #    page_start = -1
-                
-                #page_end = -1
-                #if (page_start+page_size) < hitsize:
-                #    page_end = page_start+page_size     
-                
-                studies = []
-                for hit in hits[page_start:page_start + page_size]:
-                    # d = hit.dict("nctid","brief_title","overall_status", "has_results")
-                    d = ClinicalTrialsGovArticle.from_hit(hit)
-                    studies.append({
-                        "protocolSection": {
-                            "identificationModule": {
-                                "nctId": d["nct_id"][0],
-                                "briefTitle": d["brief_title"][0]
-                            },
-                            "statusModule": {
-                                "overallStatus": d["overall_status"][0]
-                            }
+            page_size = page_size
+            hitsize = len(hits)
+            if page_size > hitsize:
+                page_size = hitsize
+            
+            page_start = page_start
+            if page_start > hitsize:
+                page_start = -1
+            
+            page_end = -1
+            if (page_start+page_size) < hitsize:
+                page_end = page_start+page_size     
+            
+            studies = []
+            for hit in hits[page_start:page_end]:
+                # d = hit.dict("nctid","brief_title","overall_status", "has_results")
+                d = ClinicalTrialsGovArticle.from_hit(hit)
+                studies.append({
+                    "protocolSection": {
+                        "identificationModule": {
+                            "nctId": d["nct_id"][0],
+                            "briefTitle": d["brief_title"][0]
                         },
-                        "hasResults": None
-                    })
-    
-                return SearchResult(rformat, {
-                    "totalCount": hitsize,
-                    "studies":studies
+                        "statusModule": {
+                            "overallStatus": d["overall_status"][0]
+                        }
+                    },
+                    "hasResults": None
                 })
+
+            return SearchResult(rformat, {
+                "totalCount": hitsize,
+                "studies":studies
+            })
         except Exception as e:
             raise e
 
