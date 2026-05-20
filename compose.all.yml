@@ -12,7 +12,7 @@ services:
       - ./index-pubmed:/app/index-pubmed
       - ./baseline-pubmed:/app/baseline-pubmed
       - ./pubmed-processed.jsonl:/app/pubmed-processed.jsonl
-    exclude_from_hc: true
+    #exclude_from_hc: true
     restart: on-failure
 
   orbit_ctgov_data_builder:
@@ -27,7 +27,7 @@ services:
     volumes:
       - ./index-ctgov:/app/index-ctgov
       - ./baseline-ctgov:/app/baseline-ctgov
-    exclude_from_hc: true      
+    #exclude_from_hc: true      
     restart: on-failure
 
   orbit_api:
@@ -39,8 +39,11 @@ services:
       MODE: api
       ORBIT_PUBMED_INDEX_PATH: /app/index-pubmed
       ORBIT_CTGOV_INDEX_PATH: /app/index-ctgov
+      ORBIT_PUBMED_ONLY_UPDATE_STATUS: 1
+      ORBIT_PUBMED_UPDATE_DISPLAY: 1
       ORBIT_PUBMED_SERVICE: 1
       ORBIT_CTGOV_SERVICE: 1
+      ORBIT_PORT: "${ORBIT_PORT}"
     depends_on:
       orbit_pubmed_data_builder:
         condition: service_completed_successfully
