@@ -1,10 +1,11 @@
 import os
 
-from fastapi import FastAPI, Query
-
+from fastapi import FastAPI, Query, HTTPException
 from fastapi.responses import RedirectResponse
+from fastapi.middleware.cors import CORSMiddleware
 from pybool_ir.query.pubmed.parser import PubmedQueryParser
 
+from pubmed_updater import PubMedUpdater
 import entrez.searchresult as sr
 from entrez.esearch import ESearch 
 from entrez.efetch import EFetch
@@ -16,17 +17,102 @@ from ctgov.studies import study as get_ctgov_study
 from ctgov.studies import metadata as get_ctgov_metadata
 from ctgov.studies import searchareas as get_ctgov_searchareas
 
+import time
+from datetime import datetime
+
 ORBIT_VERSION = "0.1.0"
-app = FastAPI(title="Orbit")
+app = FastAPI(title="Orbit", servers=[{"url": "/", "description": "Local Server"}])
 parser = PubmedQueryParser()
+updater_instance = PubMedUpdater()
 ORBIT_PUBMED_SERVICE = os.getenv("ORBIT_PUBMED_SERVICE", None)
 ORBIT_CTGOV_SERVICE = os.getenv("ORBIT_CTGOV_SERVICE", None)
+ORBIT_PUBMED_UPDATE_DISPLAY = os.getenv("ORBIT_PUBMED_UPDATE_DISPLAY", None)
+ORBIT_PUBMED_ONLY_UPDATE_STATUS = os.getenv("ORBIT_PUBMED_ONLY_UPDATE_STATUS", None)
+
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 @app.get("/", include_in_schema=False)
 async def docs_redirect():
     return RedirectResponse(url="/docs")
 
 if ORBIT_PUBMED_SERVICE is not None:
+    if ORBIT_PUBMED_UPDATE_DISPLAY is not None:
+        if ORBIT_PUBMED_ONLY_UPDATE_STATUS is not None:
+            @app.get("/update", tags=["PubMed Updates"])
+            async def set_update_frequency(frequency: str = Query(..., description="Possible frequencies: 'daily', 'weekly', 'monthly', 'off'")):
+                try:
+                    message = updater_instance.set_frequency(frequency)
+                    return {"status": "success", "message": message}
+                except ValueError as e:
+                    raise HTTPException(status_code=500, detail=str(e))
+
+        @app.get("/update/status", tags=["PubMed Updates"])
+        async def get_update_status():
+            jobs=updater_instance.scheduler.get_jobs()
+            return {"active_jobs": len(jobs), "next_run_times": [str(job.next_run_time) for job in jobs], "is_running": updater_instance.scheduler.running}
+
+
+        @app.get("/update/verify", tags=["PubMed Updates"])
+        async def verify_index_update():
+            index_path = updater_instance.index_path
+            update_path = updater_instance.update_target
+
+            if not os.path.exists(index_path):
+                raise HTTPException(status_code=404, detail=f"Index path not found: {index_path}")
+
+            # Index-Dateien und deren Modification-Time einsammeln
+            index_files = []
+            for root, dirs, files in os.walk(index_path):
+                for f in files:
+                    full_path = os.path.join(root, f)
+                    mtime = os.path.getmtime(full_path)
+                    index_files.append((full_path, mtime))
+
+            if not index_files:
+                raise HTTPException(status_code=404, detail="No files found in index directory")
+
+            latest_index_file, latest_index_mtime = max(index_files, key=lambda x: x[1])
+            latest_index_dt = datetime.fromtimestamp(latest_index_mtime)
+
+            # Update-Dateien checken (die heruntergeladenen XMLs)
+            update_files = []
+            if os.path.exists(update_path):
+                for root, dirs, files in os.walk(update_path):
+                    for f in files:
+                        full_path = os.path.join(root, f)
+                        mtime = os.path.getmtime(full_path)
+                        update_files.append((full_path, mtime))
+
+            latest_update_dt = None
+            latest_update_file = None
+            if update_files:
+                latest_update_file, latest_update_mtime = max(update_files, key=lambda x: x[1])
+                latest_update_dt = datetime.fromtimestamp(latest_update_mtime)
+
+            # Wurde der Index NACH dem letzten Update aktualisiert?
+            index_is_current = (
+                latest_update_dt is None or latest_index_dt >= latest_update_dt
+            )
+
+            return {
+                "index_path": index_path,
+                "index_last_modified": latest_index_dt.isoformat(),
+                "index_last_modified_file": latest_index_file,
+                "update_path": update_path,
+                "update_last_download": latest_update_dt.isoformat() if latest_update_dt else None,
+                "update_last_download_file": latest_update_file,
+                "index_is_current": index_is_current,
+                "checked_at": datetime.now().isoformat(),
+            }
+
 
     @app.get("/entrez/eutils/esearch.fcgi", tags=["PubMed Entrez"])
     async def esearch(
@@ -136,7 +222,7 @@ if ORBIT_PUBMED_SERVICE is not None:
         esummary = ESummary(id=id, retmode=retmode, retstart=retstart, retmax=retmax)
         return esummary.summarize()
 
-    @app.get("/entrez/eutils/info.fcgi", tags=["PubMed Entrez"])
+    @app.get("/entrez/eutils/einfo.fcgi", tags=["PubMed Entrez"])
     async def info():
         """
         # EInfo-like endpoint

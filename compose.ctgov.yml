@@ -10,19 +10,19 @@ services:
       ORBIT_CTGOV_BASELINE_PATH: /app/baseline-ctgov
     volumes:
       - ./index-ctgov:/app/index-ctgov
-      - ./baseline-ctgov:/app/baseline-ctgov
-    exclude_from_hc: true      
+      - ./baseline-ctgov:/app/baseline-ctgov    
     restart: on-failure
 
   orbit_api:
     platform: linux/amd64
     build: .
     image: orbit:latest
-    container_name: orbit_api
+    container_name: orbit_api_ctgov
     environment:
       MODE: api
       ORBIT_CTGOV_INDEX_PATH: /app/index-ctgov
       ORBIT_CTGOV_SERVICE: 1
+      ORBIT_PORT: "${ORBIT_PORT}"
     depends_on:
       orbit_ctgov_data_builder:
         condition: service_completed_successfully
