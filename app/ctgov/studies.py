@@ -70,13 +70,17 @@ def study(rformat: str, nct_id: str) -> SearchResult:
                         "hasResults": None
                     })
 
+        except Exception as e:
+            raise e
 
 
-
-
+def studies(rformat: str, query_term: str, page_start: int, page_size: int) -> SearchResult:
+    with _lock:
+        try:
+            if not vm.isCurrentThreadAttached():
+                vm.attachCurrentThread()
 
         except Exception as e:
-@@ -85,47 +73,47 @@
             with ClinicalTrialsGovIndexer(index_path=ORBIT_CTGOV_INDEX_PATH) as ix:
                 lucene_query = parser.parse_lucene(query_term)
                 hits = ix.index.search(lucene_query)
