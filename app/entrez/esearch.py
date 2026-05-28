@@ -1,6 +1,8 @@
 import lucene
 import os
 
+from org.apache.lucene.search import IndexSearcher
+
 from pybool_ir.experiments.retrieval import AdHocExperiment
 from pybool_ir.index.pubmed import PubmedIndexer
 from pybool_ir.query.pubmed.parser import PubmedQueryParser
@@ -9,6 +11,8 @@ from typing import List, Tuple
 from . import searchresult as sr
 from . import ORBIT_PUBMED_INDEX_PATH
 from . import _lock
+
+from fastapi import HTTPException, status
 
 class ESearch:
     """
@@ -58,30 +62,38 @@ class ESearch:
         if not self.vm.isCurrentThreadAttached():
             self.vm.attachCurrentThread()
 
-        # Parse and prepare query (will raise on malformed query)
-        ast = self.parser.parse_ast(self.term)
+        IndexSearcher.setMaxClauseCount(65536)
 
-        if self.field: 
-            self.set_field_recursively(ast, self.field)
+        try: 
             
-        self.parser.parse_lucene(self.term)
-        formatted_query = self.parser.format(ast)
-
-        total_count, id_list = self._idlist(formatted_query, self.retstart, self.retmax)
-        result = sr.ESearchResult(
-            retmode=self.retmode,
-            count=str(total_count),
-            retmax=str(self.retmax),
-            retstart=str(self.retstart),
-            idlist=id_list,
-            querytranslation=formatted_query,
-            translationset={"from": self.term, "to": formatted_query},
-            trecqid=self.trecqid,
-            trectag=self.trectag
-        )
-
-        return result.return_count() if self.rettype == "count" else result
-
+            # Parse and prepare query (will raise on malformed query)
+            ast = self.parser.parse_ast(self.term)
+    
+            if self.field: 
+                self.set_field_recursively(ast, self.field)
+                
+            # self.parser.parse_lucene(self.term)
+            formatted_query = self.parser.format(ast)
+    
+            total_count, id_list = self._idlist(formatted_query, self.retstart, self.retmax)
+            result = sr.ESearchResult(
+                retmode=self.retmode,
+                count=str(total_count),
+                retmax=str(self.retmax),
+                retstart=str(self.retstart),
+                idlist=id_list,
+                querytranslation=formatted_query,
+                translationset={"from": self.term, "to": formatted_query},
+                trecqid=self.trecqid,
+                trectag=self.trectag
+            )
+    
+            return result.return_count() if self.rettype == "count" else result
+        except Exception as e: 
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, 
+                detail=f"Invalid syntax: {str(e)}"
+            )
     
     # -----------------------
     # --- ESearch Helper ---
@@ -127,4 +139,3 @@ class ESearch:
         if hasattr(node, "children"):
             for child in node.children:
                 self.set_field_recursively(child, new_field)
-

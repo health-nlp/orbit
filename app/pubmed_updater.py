@@ -1,9 +1,12 @@
 import os
 import subprocess
+import json
+import lucene
 
 from fastapi import FastAPI, Query, HTTPException
 from fastapi.responses import RedirectResponse
 from pybool_ir.query.pubmed.parser import PubmedQueryParser
+from pybool_ir.index.pubmed import PubmedIndexer
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
@@ -28,24 +31,57 @@ class PubMedUpdater:
         self.update_target = os.getenv("ORBIT_PUBMED_UPDATE_PATH", "./data/updates")
         self.index_path = os.getenv("ORBIT_PUBMED_INDEX_PATH", "./data/index")
 
+    def _remove_duplicates(self, jsonl_path: str):
+        if not os.path.exists(jsonl_path):
+            return
+
+        try: 
+            lucene.getVMEnv().attachCurrentThread()
+        except AttributeError:
+            pass
+
+        pmids_to_delete = []
+        with open(jsonl_path, "r") as f:
+            for line in f:
+                try:    
+                    data = json.loads(line)
+                    if "id" in data:
+                        # print(f"Found PMID {data['id']} in update file, marking for deletion from index")
+                        pmids_to_delete.append(str(data["id"]))
+                except json.JSONDecodeError:
+                    continue
+
+        if pmids_to_delete:
+            with PubmedIndexer(self.index_path) as idx:
+                for pmid in pmids_to_delete:
+                    idx.index.delete("id", pmid)
+                idx.index.commit()
+
+
     def _run_update_task(self):
         try: 
             subprocess.run(["uv", "run", "-m", "pybool_ir.cli", "pubmed", "update", "-u", self.update_target], check=True)
 
             subprocess.run(["uv", "run", "-m", "pybool_ir.cli", "pubmed", "process", "-b", self.update_target, "-o", "update_tmp.jsonl"], check=True)
-            subprocess.run(["uv", "run", "-m", "pybool_ir.cli", "pubmed", "index", "-b", "update_tmp.jsonl", "-i", self.index_path, "--append"], check=True)
+            self._remove_duplicates("update_tmp.jsonl")
+
+            subprocess.run(["uv", "run", "-m", "pybool_ir.cli", "pubmed", "index", "-b", "update_tmp.jsonl", "-i", self.index_path], check=True)
 
             if os.path.exists("update_tmp.jsonl"): 
                 os.remove("update_tmp.jsonl")
         except subprocess.CalledProcessError as e: 
             print(f">>> Error while updating: {e}")
 
+
+
     def set_frequency(self, frequency: str): 
         if self.scheduler.get_job(self.job_id):
             self.scheduler.remove_job(self.job_id)
 
         freq = frequency.lower()
-        if freq == "daily": 
+        if freq == "minutely":
+            trigger = CronTrigger(minute="*/50")
+        elif freq == "daily": 
             trigger = CronTrigger(hour=2, minute=0)
         elif freq == "weekly": 
             trigger = CronTrigger(day_of_week="sun", hour=2, minute=0)
