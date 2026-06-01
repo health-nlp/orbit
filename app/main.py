@@ -12,7 +12,7 @@ from entrez.efetch import EFetch
 from entrez.esummary import ESummary
 from entrez.einfo import EInfo
 
-from ctgov.studies import studies as get_ctgov_studies
+# from ctgov.studies import studies as get_ctgov_studies
 from ctgov.studies import study as get_ctgov_study
 from ctgov.studies import metadata as get_ctgov_metadata
 from ctgov.studies import searchareas as get_ctgov_searchareas
