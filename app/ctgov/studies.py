@@ -76,7 +76,6 @@ def study(rformat: str, nct_id: str) -> SearchResult:
 
 
         except Exception as e:
-@@ -85,47 +73,47 @@
             with ClinicalTrialsGovIndexer(index_path=ORBIT_CTGOV_INDEX_PATH) as ix:
                 lucene_query = parser.parse_lucene(query_term)
                 hits = ix.index.search(lucene_query)
