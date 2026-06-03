@@ -11,8 +11,8 @@ Orbit is a framework for self-hosting clean room re-implementations of biomedica
 
 There are currently two versions of a live implementation running for demonstration and testing purposes:
 
- - production (https://orbit.health-nlp.com) for the latest stable version.
- - staging (https://orbit-staging.health-nlp.com) for the latest unstable version.
+ - production (https://orbit-api.health-nlp.com) for the latest stable version.
+ - staging (https://orbit-api-staging.health-nlp.com) for the latest unstable version.
 
 Both versions host all currently supported API re-implementations. 
 
