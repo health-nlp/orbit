@@ -159,12 +159,15 @@ if ORBIT_CTGOV_SERVICE is not None:
 
     @app.get("/ct/api/v2/studies", tags=["ClinicalTrials.gov"])
     async def ctgov_studies(
-        rformat: str = Query(default="json", description="how studies should be returned", alias="format", openapi_examples=["json","csv"]),
+        rformat: str = Query(default="json", description="how studies should be returned", alias="format", openapi_examples={"json" :{"value": "json"}, "trec" :{"value": "trec"}, "xml":{"value": "xml"}, "csv":{"value": "csv"}}),
         query_term: str = Query(default=..., description="Other terms query in Essie expression syntax.", alias="query.term"),
         page_start: int = Query(default="0", description="the start index for studies)", alias="pageStart"),
-        page_size: int = Query(default="20", description="the end index for studies", alias="pageSize"), 
+        page_size: int = Query(default="20", description="the end index for studies", alias="pageSize"),
+        trecqid: str = Query(default="0", description="When returning a TREC run, the qid field."),
+        trectag: str = Query(default="orbit", description="When returning a TREC run, the tag field."), 
     ):
-        return get_ctgov_studies(rformat, query_term, page_start, page_size)
+        print("Received request with parameters:", rformat, query_term, page_start, page_size, trecqid, trectag)
+        return get_ctgov_studies(rformat, query_term, page_start, page_size, trecqid, trectag)
 
     @app.get("/ct/api/v2/studies/metadata", tags=["ClinicalTrials.gov"])
     async def ctgov_studies_metadata():
