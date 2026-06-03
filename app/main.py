@@ -1,10 +1,11 @@
 import os
 
-from fastapi import FastAPI, Query
-
+from fastapi import FastAPI, Query, HTTPException
 from fastapi.responses import RedirectResponse
+from fastapi.middleware.cors import CORSMiddleware
 from pybool_ir.query.pubmed.parser import PubmedQueryParser
 
+from pubmed_updater import PubMedUpdater
 import entrez.searchresult as sr
 from entrez.esearch import ESearch 
 from entrez.efetch import EFetch
@@ -16,17 +17,102 @@ from ctgov.studies import study as get_ctgov_study
 from ctgov.studies import metadata as get_ctgov_metadata
 from ctgov.studies import searchareas as get_ctgov_searchareas
 
+import time
+from datetime import datetime
+
 ORBIT_VERSION = "0.1.0"
-app = FastAPI(title="Orbit")
+app = FastAPI(title="Orbit", servers=[{"url": "/", "description": "Local Server"}])
 parser = PubmedQueryParser()
+updater_instance = PubMedUpdater()
 ORBIT_PUBMED_SERVICE = os.getenv("ORBIT_PUBMED_SERVICE", None)
 ORBIT_CTGOV_SERVICE = os.getenv("ORBIT_CTGOV_SERVICE", None)
+ORBIT_PUBMED_UPDATE_DISPLAY = os.getenv("ORBIT_PUBMED_UPDATE_DISPLAY", None)
+ORBIT_PUBMED_ONLY_UPDATE_STATUS = os.getenv("ORBIT_PUBMED_ONLY_UPDATE_STATUS", None)
+
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 @app.get("/", include_in_schema=False)
 async def docs_redirect():
     return RedirectResponse(url="/docs")
 
 if ORBIT_PUBMED_SERVICE is not None:
+    if ORBIT_PUBMED_UPDATE_DISPLAY is not None:
+        if ORBIT_PUBMED_ONLY_UPDATE_STATUS is not None:
+            @app.get("/update", tags=["PubMed Updates"])
+            async def set_update_frequency(frequency: str = Query(..., description="Possible frequencies: 'daily', 'weekly', 'monthly', 'off'")):
+                try:
+                    message = updater_instance.set_frequency(frequency)
+                    return {"status": "success", "message": message}
+                except ValueError as e:
+                    raise HTTPException(status_code=500, detail=str(e))
+
+        @app.get("/update/status", tags=["PubMed Updates"])
+        async def get_update_status():
+            jobs=updater_instance.scheduler.get_jobs()
+            return {"active_jobs": len(jobs), "next_run_times": [str(job.next_run_time) for job in jobs], "is_running": updater_instance.scheduler.running}
+
+
+        @app.get("/update/verify", tags=["PubMed Updates"])
+        async def verify_index_update():
+            index_path = updater_instance.index_path
+            update_path = updater_instance.update_target
+
+            if not os.path.exists(index_path):
+                raise HTTPException(status_code=404, detail=f"Index path not found: {index_path}")
+
+            # Index-Dateien und deren Modification-Time einsammeln
+            index_files = []
+            for root, dirs, files in os.walk(index_path):
+                for f in files:
+                    full_path = os.path.join(root, f)
+                    mtime = os.path.getmtime(full_path)
+                    index_files.append((full_path, mtime))
+
+            if not index_files:
+                raise HTTPException(status_code=404, detail="No files found in index directory")
+
+            latest_index_file, latest_index_mtime = max(index_files, key=lambda x: x[1])
+            latest_index_dt = datetime.fromtimestamp(latest_index_mtime)
+
+            # Update-Dateien checken (die heruntergeladenen XMLs)
+            update_files = []
+            if os.path.exists(update_path):
+                for root, dirs, files in os.walk(update_path):
+                    for f in files:
+                        full_path = os.path.join(root, f)
+                        mtime = os.path.getmtime(full_path)
+                        update_files.append((full_path, mtime))
+
+            latest_update_dt = None
+            latest_update_file = None
+            if update_files:
+                latest_update_file, latest_update_mtime = max(update_files, key=lambda x: x[1])
+                latest_update_dt = datetime.fromtimestamp(latest_update_mtime)
+
+            # Wurde der Index NACH dem letzten Update aktualisiert?
+            index_is_current = (
+                latest_update_dt is None or latest_index_dt >= latest_update_dt
+            )
+
+            return {
+                "index_path": index_path,
+                "index_last_modified": latest_index_dt.isoformat(),
+                "index_last_modified_file": latest_index_file,
+                "update_path": update_path,
+                "update_last_download": latest_update_dt.isoformat() if latest_update_dt else None,
+                "update_last_download_file": latest_update_file,
+                "index_is_current": index_is_current,
+                "checked_at": datetime.now().isoformat(),
+            }
+
 
     @app.get("/entrez/eutils/esearch.fcgi", tags=["PubMed Entrez"])
     async def esearch(
@@ -136,7 +222,7 @@ if ORBIT_PUBMED_SERVICE is not None:
         esummary = ESummary(id=id, retmode=retmode, retstart=retstart, retmax=retmax)
         return esummary.summarize()
 
-    @app.get("/entrez/eutils/info.fcgi", tags=["PubMed Entrez"])
+    @app.get("/entrez/eutils/einfo.fcgi", tags=["PubMed Entrez"])
     async def info():
         """
         # EInfo-like endpoint
@@ -151,33 +237,106 @@ if ORBIT_PUBMED_SERVICE is not None:
 
 if ORBIT_CTGOV_SERVICE is not None:
     
-    @app.get("/ct/api/v2/version", tags=["ClinicalTrials.gov"])
+    @app.get("/ct/api/v2/version", tags=["ClinicalTrials.gov"], summary="Orbit Version")
     async def ctgov_version():
+        """
+        # API Version Endpoint
+        
+        ## Function
+        Returns version information about the Orbit API service.
+        
+        """
         return {
             "apiVersion": f"2.0.5-(orbit-{ORBIT_VERSION})"
         }
 
-    @app.get("/ct/api/v2/studies", tags=["ClinicalTrials.gov"])
+    @app.get("/ct/api/v2/studies", tags=["ClinicalTrials.gov"], summary="Studies")
     async def ctgov_studies(
         rformat: str = Query(default="json", description="how studies should be returned", alias="format", openapi_examples={"json" :{"value": "json"}, "trec" :{"value": "trec"}, "xml":{"value": "xml"}, "csv":{"value": "csv"}}),
-        query_term: str = Query(default=..., description="Other terms query in Essie expression syntax.", alias="query.term"),
+        query_term: str = Query(default=..., description="other terms query in Essie expression syntax.", alias="query.term"),
         page_start: int = Query(default="0", description="the start index for studies)", alias="pageStart"),
         page_size: int = Query(default="20", description="the end index for studies", alias="pageSize"),
         trecqid: str = Query(default="0", description="When returning a TREC run, the qid field."),
         trectag: str = Query(default="orbit", description="When returning a TREC run, the tag field."), 
     ):
         print("Received request with parameters:", rformat, query_term, page_start, page_size, trecqid, trectag)
+        """
+        # Studies
+        
+        ## Function
+        Returns a list of clinical trials that match the provided search criteria with support for pagination.
+        
+        ## Required Parameters
+        **query.term:** The search query in Essie expression syntax. Must be URL encoded.
+
+        
+        ## Optional Parameters
+        **format:** Output format - 'json' (default) or 'csv'.
+        
+        **pageStart:** Starting index for pagination (default=0).
+        
+        **pageSize:** Number of results per page (default=20, maximum=100).
+
+        ## Query Syntax (Essie)
+        The Essie query syntax supports:
+        - **AND**: Both terms must appear (default)
+        - **OR**: Either term can appear
+        - **NOT**: Exclude term
+        - **Phrases**: Use quotes for exact phrases
+        - **Fields**: Use field:name syntax (e.g., AREA[Condition]cancer)
+        
+        ## Query Examples
+        - AREA[Condition]cancer AND AREA[InterventionName]immunotherapy
+        - AREA[LeadSponsorName]NIH AND AREA[Phase]PHASE3
+        - AREA[Location]Germany AND RECR[Recruitment]RECRUITING
+        - "breast cancer" AND AREA[OverallStatus]RECRUITING
+
+        ## Example Request
+        ```bash
+        GET /ct/api/v2/studies?query.term=breast%20cancer
+        ```
+        """
         return get_ctgov_studies(rformat, query_term, page_start, page_size, trecqid, trectag)
 
-    @app.get("/ct/api/v2/studies/metadata", tags=["ClinicalTrials.gov"])
+    @app.get("/ct/api/v2/studies/{nctId}", tags=["ClinicalTrials.gov"], summary="Single Study")
+    async def ctgov_study(nctId: str):
+        """
+        # Single Study
+        
+        ## Function
+        Returns the complete record for a single clinical trial identified by its NCT (National Clinical Trial) ID.
+        
+        ## Required Parameters
+        **nctId:** The NCT ID of the clinical trial (e.g., 'NCT01234567'). Must be URL encoded if passed directly.
+
+        ## Example
+        ```bash
+        GET /ct/api/v2/studies/NCT01234567
+        ```
+
+        """
+        return get_ctgov_study("json", nctId)
+
+
+    @app.get("/ct/api/v2/studies/metadata", tags=["ClinicalTrials.gov"], summary="Studies Metadata")
     async def ctgov_studies_metadata():
+        """
+        # Metadata
+        
+        ## Function
+        Returns information about the structure of the clinical trial data, including available fields, their types, and descriptions.
+        """
         return get_ctgov_metadata()
 
-    @app.get("/ct/api/v2/studies/search-areas", tags=["ClinicalTrials.gov"])
+    @app.get("/ct/api/v2/studies/search-areas", tags=["ClinicalTrials.gov"], summary="Studies Search Areas")
     async def ctgov_studies_search_areas():
+        """
+        # Search Areas
+        
+        ## Function
+        Returns information about all searchable areas (fields) in the ClinicalTrials.gov database.
+        
+        """
         return get_ctgov_searchareas()
 
-    @app.get("/ct/api/v2/studies/{nctId}", tags=["ClinicalTrials.gov"])
-    async def ctgov_study(nctId: str):
-        return get_ctgov_study("json", nctId)
 
